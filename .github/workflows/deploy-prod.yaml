@@ -40,7 +40,7 @@ jobs:
         run: cd cdk && npm ci
 
       - name: Build CDK app
-        run: npm run build
+        run: cd cdk && npm run build
 
       - name: Deploy to AWS using CDK
         env:
@@ -50,5 +50,5 @@ jobs:
           CERTIFICATE_ARN: ${{ secrets.CERTIFICATE_ARN_PROD }}
           HOSTED_ZONE_ID: ${{ secrets.HOSTED_ZONE_ID }}
           STAGE_NAME: prod
-        run: npm run deploy -- --require-approval never
+        run: cd cdk && npm run deploy -- --require-approval never
       
