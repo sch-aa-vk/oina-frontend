@@ -10,6 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      id-token: write
 
     steps:
       - name: Checkout code
@@ -23,7 +24,7 @@ jobs:
       - name: Install AWS CDK
         run: npm install -g aws-cdk
 
-      - name: Install dependencies
+      - name: Install frontend dependencies
         run: npm ci
 
       - name: Build the project
@@ -35,6 +36,12 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           aws-region: ${{ secrets.AWS_REGION }}
 
+      - name: Install CDK dependencies
+        run: cd cdk && npm ci
+
+      - name: Build CDK app
+        run: npm run build
+
       - name: Deploy to AWS using CDK
         env:
           CDK_DEFAULT_ACCOUNT: ${{ secrets.AWS_ACCOUNT_ID }}
@@ -43,5 +50,5 @@ jobs:
           CERTIFICATE_ARN: ${{ secrets.CERTIFICATE_ARN_PROD }}
           HOSTED_ZONE_ID: ${{ secrets.HOSTED_ZONE_ID }}
           STAGE_NAME: prod
-        run: cd cdk && npm run build && npm run deploy -- --require-approval never
+        run: npm run deploy -- --require-approval never
       
