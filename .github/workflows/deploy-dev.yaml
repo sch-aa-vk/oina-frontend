@@ -1,9 +1,9 @@
-name: Deploy PROD Frontend
+name: Deploy DEV Frontend
 
 on:
   push:
     branches:
-      - master
+      - develop
 
 jobs:
   build-and-deploy:
@@ -43,19 +43,19 @@ jobs:
         env:
           CDK_DEFAULT_ACCOUNT: ${{ secrets.AWS_ACCOUNT_ID }}
           CDK_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
-          DOMAIN_NAME: ${{ secrets.DOMAIN_NAME_PROD }}
-          CERTIFICATE_ARN: ${{ secrets.CERTIFICATE_ARN_PROD }}
+          DOMAIN_NAME: ${{ secrets.DOMAIN_NAME_DEV }}
+          CERTIFICATE_ARN: ${{ secrets.CERTIFICATE_ARN_DEV }}
           HOSTED_ZONE_ID: ${{ secrets.HOSTED_ZONE_ID }}
-          STAGE_NAME: prod
+          STAGE_NAME: dev
         run: cd cdk && npm run synth
 
       - name: Deploy to AWS using CDK
         env:
           CDK_DEFAULT_ACCOUNT: ${{ secrets.AWS_ACCOUNT_ID }}
           CDK_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
-          DOMAIN_NAME: ${{ secrets.DOMAIN_NAME_PROD }}
-          CERTIFICATE_ARN: ${{ secrets.CERTIFICATE_ARN_PROD }}
+          DOMAIN_NAME: ${{ secrets.DOMAIN_NAME_DEV }}
+          CERTIFICATE_ARN: ${{ secrets.CERTIFICATE_ARN_DEV }}
           HOSTED_ZONE_ID: ${{ secrets.HOSTED_ZONE_ID }}
-          STAGE_NAME: prod
+          STAGE_NAME: dev
         run: cd cdk && npm run deploy -- --require-approval never
       

@@ -1,4 +1,5 @@
 import * as cdk from "aws-cdk-lib";
+import * as path from "path";
 import { BlockPublicAccess, Bucket } from "aws-cdk-lib/aws-s3";
 import { EnvironmentVariables, getEnvVar } from "./helpers/get-env-var";
 import { generateResourceId } from "./helpers/generate-resource-id";
@@ -64,7 +65,7 @@ export class Stack extends cdk.Stack {
     });
 
     new BucketDeployment(this, generateResourceId("bucket-deploy"), {
-      sources: [Source.asset("../.next")],
+      sources: [Source.asset(path.join(__dirname, "../../out"))],
       destinationBucket: bucket,
       distribution: cdn,
       distributionPaths: ["/*"],

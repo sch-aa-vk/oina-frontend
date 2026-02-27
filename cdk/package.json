@@ -5,7 +5,7 @@
     "cdk": "bin/cdk.js"
   },
   "scripts": {
-    "build": "cdk bootstrap && cdk synth",
+    "synth": "cdk synth",
     "deploy": "cdk deploy",
     "destroy": "cdk destroy"
   },
