@@ -40,6 +40,13 @@ jobs:
         run: cd cdk && npm ci
 
       - name: Build CDK app
+        env:
+          CDK_DEFAULT_ACCOUNT: ${{ secrets.AWS_ACCOUNT_ID }}
+          CDK_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
+          DOMAIN_NAME: ${{ secrets.DOMAIN_NAME_PROD }}
+          CERTIFICATE_ARN: ${{ secrets.CERTIFICATE_ARN_PROD }}
+          HOSTED_ZONE_ID: ${{ secrets.HOSTED_ZONE_ID }}
+          STAGE_NAME: prod
         run: cd cdk && npm run build
 
       - name: Deploy to AWS using CDK
