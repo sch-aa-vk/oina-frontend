@@ -8,10 +8,10 @@ export { ToggleSetting } from "./ToggleSetting";
 export { PublishStep } from "./PublishStep";
 export { PreviewModalShell } from "./PreviewModal";
 
-export type { Recipient, GameTheme } from "./Types";
+export type { Recipient, GameTheme } from "./types";
 export {
   OCCASIONS,
   CHOOSE_ME_THEME,
   GUESS_BY_EMOJI_THEME,
   CROSSWORD_THEME,
-} from "./Types";
+} from "./types";

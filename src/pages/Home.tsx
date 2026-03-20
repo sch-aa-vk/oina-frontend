@@ -131,7 +131,7 @@ function TemplateCard({ game }: { game: TemplateGame }) {
         {/* Gradient background */}
         <div
           className={cn(
-            "absolute inset-0 bg-gradient-to-br opacity-90",
+            "absolute inset-0 bg-linear-to-br opacity-90",
             game.gradient
           )}
         />
@@ -215,7 +215,7 @@ function TrendingCard({ game }: { game: TrendingGame }) {
         {/* Gradient background — muted version */}
         <div
           className={cn(
-            "absolute inset-0 bg-gradient-to-br opacity-60",
+            "absolute inset-0 bg-linear-to-br opacity-60",
             game.gradient
           )}
         />
@@ -277,7 +277,7 @@ function SectionHeader({
   return (
     <div className="flex items-start justify-between gap-4 mb-5">
       <div className="flex items-start gap-3">
-        <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+        <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
           <Icon className="w-4 h-4 text-primary" />
         </div>
         <div>
@@ -302,7 +302,7 @@ export default function Home() {
   return (
     <div className="space-y-6 pb-8">
       {/* Hero banner */}
-      <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-violet-600 via-purple-600 to-pink-600 p-6 text-white">
+      <div className="relative rounded-3xl overflow-hidden bg-linear-to-br from-violet-600 via-purple-600 to-pink-600 p-6 text-white">
         {/* Decorative blobs */}
         <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-white/10 blur-2xl" />
         <div className="absolute -bottom-6 -left-6 w-32 h-32 rounded-full bg-white/10 blur-xl" />

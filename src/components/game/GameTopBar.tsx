@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { StepBadge } from "./StepBadge";
-import type { GameTheme } from "./Types";
+import type { GameTheme } from "./types";
 
 interface GameTopBarProps {
   /** Current active step (1–3) */

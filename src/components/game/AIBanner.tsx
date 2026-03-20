@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import type { GameTheme } from "./Types";
+import type { GameTheme } from "./types";
 
 interface AiBannerProps {
   recipientName: string;

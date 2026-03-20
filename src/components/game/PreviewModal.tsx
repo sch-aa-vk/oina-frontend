@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import type { Recipient, GameTheme } from "./Types";
+import type { Recipient, GameTheme } from "./types";
 
 interface PreviewModalShellProps {
   recipient: Recipient;

@@ -4,8 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { OCCASIONS } from "./Types";
-import type { Recipient, GameTheme } from "./Types";
+import { OCCASIONS } from "./types";
+import type { Recipient, GameTheme } from "./types";
 
 interface RecipientStepProps {
   recipient: Recipient;

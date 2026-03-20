@@ -2,8 +2,8 @@ import { Eye, Gift } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import type { GameTheme } from "./Types";
-import type { Recipient } from "./Types";
+import type { GameTheme } from "./types";
+import type { Recipient } from "./types";
 
 interface PublishStepProps {
   recipient: Recipient;
