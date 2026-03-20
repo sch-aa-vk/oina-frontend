@@ -959,7 +959,9 @@ export default function Crossword() {
               <AiBanner
                 recipientName={recipient.name}
                 theme={CROSSWORD_THEME}
-                title={(name) => `AI can suggest words & clues for ${name}`}
+                title={(name: string) =>
+                  `AI can suggest words & clues for ${name}`
+                }
                 subtitle="Tell us about shared memories and we'll generate meaningful words"
               />
             )}

@@ -498,7 +498,7 @@ export default function ChooseMe() {
               <AiBanner
                 recipientName={recipient.name}
                 theme={CHOOSE_ME_THEME}
-                title={(name) =>
+                title={(name: string) =>
                   `AI can craft personalized questions for ${name}`
                 }
                 subtitle="Tell us about them and we'll generate fun, meaningful options"

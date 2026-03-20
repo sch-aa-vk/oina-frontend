@@ -655,7 +655,9 @@ export default function GuessByEmoji() {
               <AiBanner
                 recipientName={recipient.name}
                 theme={GUESS_BY_EMOJI_THEME}
-                title={(name) => `AI can suggest emoji combos for ${name}`}
+                title={(name: string) =>
+                  `AI can suggest emoji combos for ${name}`
+                }
                 subtitle="Describe a memory or word and we'll pick the perfect emojis"
               />
             )}
