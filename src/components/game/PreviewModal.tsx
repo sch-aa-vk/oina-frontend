@@ -7,14 +7,11 @@ interface PreviewModalShellProps {
   recipient: Recipient;
   personalMessage: string;
   showMessage: boolean;
-  /** e.g. "2 / 5" */
   progress: string;
-  /** 0–100 */
   progressPercent: number;
   theme: GameTheme;
   onClose: () => void;
   children: React.ReactNode;
-  /** Max width class for the modal, default "max-w-sm" */
   maxWidth?: string;
 }
 
@@ -30,24 +27,27 @@ export function PreviewModalShell({
   maxWidth = "max-w-sm",
 }: PreviewModalShellProps) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50 backdrop-blur-sm">
       <div
         className={cn(
-          "bg-background rounded-3xl border border-border shadow-2xl w-full overflow-hidden",
+          "bg-background rounded-t-2xl sm:rounded-3xl border border-border shadow-2xl w-full max-h-[90dvh] sm:max-h-[85vh] overflow-y-auto overflow-x-hidden",
           maxWidth
         )}
       >
         {/* Header */}
-        <div className="px-6 py-4 border-b border-border flex items-center justify-between">
-          <div>
-            <p className="text-xs text-muted-foreground uppercase tracking-wider">
+        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm px-4 sm:px-6 py-3 sm:py-4 border-b border-border flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <p className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider">
               Preview
             </p>
-            <p className="text-sm font-semibold">
+            <p className="text-xs sm:text-sm font-semibold truncate">
               {recipient.name ? `A game for ${recipient.name}` : "Your game"}
             </p>
           </div>
-          <Badge variant="secondary" className="text-xs">
+          <Badge
+            variant="secondary"
+            className="text-[10px] sm:text-xs shrink-0"
+          >
             {progress}
           </Badge>
         </div>
@@ -56,15 +56,25 @@ export function PreviewModalShell({
         {personalMessage && showMessage && (
           <div
             className={cn(
-              "mx-5 mt-4 px-4 py-3 rounded-2xl border",
+              "mx-3 sm:mx-5 mt-3 sm:mt-4 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl border",
               theme.messageBg,
               theme.messageBorder
             )}
           >
-            <p className={cn("text-xs font-medium mb-1", theme.messageLabel)}>
+            <p
+              className={cn(
+                "text-[10px] sm:text-xs font-medium mb-0.5 sm:mb-1",
+                theme.messageLabel
+              )}
+            >
               A message for you 💌
             </p>
-            <p className={cn("text-sm", theme.messageBody)}>
+            <p
+              className={cn(
+                "text-xs sm:text-sm leading-snug",
+                theme.messageBody
+              )}
+            >
               {personalMessage}
             </p>
           </div>
@@ -74,8 +84,8 @@ export function PreviewModalShell({
         {children}
 
         {/* Progress bar */}
-        <div className="px-6 pb-3">
-          <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+        <div className="px-4 sm:px-6 pb-2.5 sm:pb-3">
+          <div className="w-full h-1 sm:h-1.5 bg-muted rounded-full overflow-hidden">
             <div
               className={cn(
                 "h-full bg-linear-to-r transition-all duration-500",
@@ -87,11 +97,11 @@ export function PreviewModalShell({
         </div>
 
         {/* Close button */}
-        <div className="px-6 pb-5">
+        <div className="px-4 sm:px-6 pb-4 sm:pb-5">
           <Button
             variant="outline"
             onClick={onClose}
-            className="w-full rounded-xl"
+            className="w-full rounded-xl h-10 sm:h-11 text-sm"
           >
             Close preview
           </Button>
@@ -100,4 +110,3 @@ export function PreviewModalShell({
     </div>
   );
 }
- 

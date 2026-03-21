@@ -14,19 +14,12 @@ interface RecipientStepProps {
   onPersonalMessageChange: (message: string) => void;
   onContinue: () => void;
   theme: GameTheme;
-  /** Text shown in the name input placeholder */
   namePlaceholder?: string;
-  /** Text shown in the message textarea placeholder */
   messagePlaceholder?: string;
-  /** Title shown at the top of Step 1 */
   heading?: string;
-  /** Subtitle shown below the heading */
   subheading?: string;
-  /** Title for the AI teaser card */
   aiTeaserTitle?: string;
-  /** Body text for the AI teaser card */
   aiTeaserBody?: string;
-  /** Label on the "Continue" button */
   continueLabel?: string;
 }
 
@@ -49,16 +42,18 @@ export function RecipientStep({
     <>
       {/* Heading */}
       <div className="space-y-1">
-        <h1 className="text-2xl font-bold tracking-tight">{heading}</h1>
-        <p className="text-muted-foreground text-sm">{subheading}</p>
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
+          {heading}
+        </h1>
+        <p className="text-muted-foreground text-xs sm:text-sm">{subheading}</p>
       </div>
 
       {/* Form card */}
-      <div className="rounded-3xl border border-border bg-background p-6 space-y-6 shadow-sm">
+      <div className="rounded-2xl sm:rounded-3xl border border-border bg-background p-4 sm:p-6 space-y-4 sm:space-y-6 shadow-sm">
         {/* Name */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium flex items-center gap-2">
-            <User className="w-4 h-4 text-muted-foreground" />
+        <div className="space-y-1.5 sm:space-y-2">
+          <label className="text-xs sm:text-sm font-medium flex items-center gap-1.5 sm:gap-2">
+            <User className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground" />
             Recipient's name
           </label>
           <Input
@@ -67,24 +62,24 @@ export function RecipientStep({
             onChange={(e) =>
               onRecipientChange({ ...recipient, name: e.target.value })
             }
-            className="h-11 rounded-xl"
+            className="h-10 sm:h-11 rounded-lg sm:rounded-xl text-sm"
           />
         </div>
 
         {/* Occasion pills */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium flex items-center gap-2">
-            <Gift className="w-4 h-4 text-muted-foreground" />
+        <div className="space-y-1.5 sm:space-y-2">
+          <label className="text-xs sm:text-sm font-medium flex items-center gap-1.5 sm:gap-2">
+            <Gift className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground" />
             Occasion
           </label>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-1.5 sm:gap-2">
             {OCCASIONS.map((o) => (
               <button
                 key={o}
                 type="button"
                 onClick={() => onRecipientChange({ ...recipient, occasion: o })}
                 className={cn(
-                  "px-3 py-1.5 rounded-full text-sm border transition-colors",
+                  "px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm border transition-colors",
                   recipient.occasion === o
                     ? "bg-primary text-primary-foreground border-primary"
                     : "border-border hover:border-primary/50 hover:bg-primary/5"
@@ -97,11 +92,14 @@ export function RecipientStep({
         </div>
 
         {/* Personal message */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium flex items-center gap-2">
-            <MessageCircleHeart className="w-4 h-4 text-muted-foreground" />
+        <div className="space-y-1.5 sm:space-y-2">
+          <label className="text-xs sm:text-sm font-medium flex items-center gap-1.5 sm:gap-2">
+            <MessageCircleHeart className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground" />
             Personal message
-            <Badge variant="secondary" className="text-xs font-normal">
+            <Badge
+              variant="secondary"
+              className="text-[10px] sm:text-xs font-normal"
+            >
               Optional
             </Badge>
           </label>
@@ -109,10 +107,10 @@ export function RecipientStep({
             placeholder={messagePlaceholder}
             value={personalMessage}
             onChange={(e) => onPersonalMessageChange(e.target.value)}
-            className="rounded-xl resize-none min-h-22.5"
+            className="rounded-lg sm:rounded-xl resize-none min-h-20 sm:min-h-22.5 text-sm"
             maxLength={280}
           />
-          <p className="text-xs text-right text-muted-foreground">
+          <p className="text-[11px] sm:text-xs text-right text-muted-foreground">
             {personalMessage.length}/280
           </p>
         </div>
@@ -121,32 +119,47 @@ export function RecipientStep({
       {/* AI teaser */}
       <div
         className={cn(
-          "rounded-3xl border p-6 bg-linear-to-br",
+          "rounded-2xl sm:rounded-3xl border p-4 sm:p-6 bg-linear-to-br",
           theme.teaserBorder,
           theme.teaserBg
         )}
       >
-        <div className="flex items-start gap-4">
+        <div className="flex items-start gap-3 sm:gap-4">
           <div
             className={cn(
-              "w-10 h-10 rounded-2xl bg-linear-to-br flex items-center justify-center shrink-0 mt-0.5",
+              "w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-linear-to-br flex items-center justify-center shrink-0 mt-0.5",
               theme.teaserIcon
             )}
           >
-            <Sparkles className="w-5 h-5 text-white" />
+            <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
           </div>
-          <div>
-            <p className={cn("font-semibold text-sm mb-1", theme.teaserTitle)}>
+          <div className="min-w-0">
+            <p
+              className={cn(
+                "font-semibold text-xs sm:text-sm mb-0.5 sm:mb-1 leading-snug",
+                theme.teaserTitle
+              )}
+            >
               {aiTeaserTitle}
             </p>
-            <p className={cn("text-sm", theme.teaserBody)}>{aiTeaserBody}</p>
+            <p
+              className={cn(
+                "text-xs sm:text-sm leading-snug",
+                theme.teaserBody
+              )}
+            >
+              {aiTeaserBody}
+            </p>
           </div>
         </div>
       </div>
 
       {/* Continue */}
       <div className="flex justify-end">
-        <Button onClick={onContinue} className="h-11 px-6 gap-2 rounded-xl">
+        <Button
+          onClick={onContinue}
+          className="h-10 sm:h-11 px-5 sm:px-6 gap-2 rounded-xl text-sm w-full sm:w-auto"
+        >
           {continueLabel}
         </Button>
       </div>

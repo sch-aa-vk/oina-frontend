@@ -74,14 +74,6 @@ export function NavUser({
                 </div>
               </div>
             </DropdownMenuLabel>
-            {/* <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <Sparkles />
-                Upgrade to Pro
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator /> */}
             <DropdownMenuGroup>
               <Link to={"/profile"}>
                 <DropdownMenuItem>
@@ -89,10 +81,7 @@ export function NavUser({
                     Account
                 </DropdownMenuItem>
               </Link>
-              {/* <DropdownMenuItem>
-                <CreditCard />
-                Billing
-              </DropdownMenuItem> */}
+
               <DropdownMenuItem>
                 <Bell />
                 Notifications

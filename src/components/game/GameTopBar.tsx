@@ -6,11 +6,9 @@ import { StepBadge } from "./StepBadge";
 import type { GameTheme } from "./types";
 
 interface GameTopBarProps {
-  /** Current active step (1–3) */
   step: number;
   onStepChange: (step: number) => void;
   stepLabels: [string, string, string];
-  /** Whether the preview button should be disabled */
   previewDisabled?: boolean;
   onPreview: () => void;
   canPublish: boolean;
@@ -30,27 +28,27 @@ export function GameTopBar({
 
   return (
     <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+      <div className="max-w-3xl mx-auto px-3 sm:px-6 h-12 sm:h-16 flex items-center justify-between gap-2 sm:gap-4">
         {/* Left: back + steps */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4 min-w-0">
           <Button
             variant="ghost"
             size="sm"
-            className="gap-2 text-muted-foreground -ml-2"
+            className="gap-2 text-muted-foreground -ml-1 sm:-ml-2 shrink-0 h-8 sm:h-9 w-8 sm:w-auto px-0 sm:px-3"
             onClick={() => navigate("/")}
           >
             <ChevronLeft className="w-4 h-4" />
             <span className="hidden sm:block">Games</span>
           </Button>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-3">
             {([1, 2, 3] as const).map((s, i) => (
-              <div key={s} className="flex items-center gap-3">
+              <div key={s} className="flex items-center gap-1.5 sm:gap-3">
                 <button onClick={() => onStepChange(s)}>
                   <StepBadge step={s} label={stepLabels[i]} current={step} />
                 </button>
                 {i < 2 && (
-                  <div className="w-6 h-px bg-border hidden sm:block" />
+                  <div className="w-3 sm:w-6 h-px bg-border hidden xs:block" />
                 )}
               </div>
             ))}
@@ -58,11 +56,11 @@ export function GameTopBar({
         </div>
 
         {/* Right: preview + continue/publish */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           <Button
             variant="outline"
             size="sm"
-            className="gap-1.5 h-9"
+            className="gap-1.5 h-8 sm:h-9 w-8 sm:w-auto px-0 sm:px-3"
             disabled={previewDisabled}
             onClick={onPreview}
           >
@@ -73,22 +71,24 @@ export function GameTopBar({
           {step < 3 ? (
             <Button
               size="sm"
-              className="h-9"
+              className="h-8 sm:h-9 text-xs sm:text-sm px-3 sm:px-4"
               onClick={() => onStepChange(step + 1)}
             >
-              Continue
+              <span className="sm:hidden">Next</span>
+              <span className="hidden sm:inline">Continue</span>
             </Button>
           ) : (
             <Button
               size="sm"
               disabled={!canPublish}
               className={cn(
-                "h-9 gap-1.5 bg-linear-to-r text-white border-0",
+                "h-8 sm:h-9 gap-1 sm:gap-1.5 bg-linear-to-r text-white border-0 text-xs sm:text-sm px-3 sm:px-4",
                 theme.topBarPublishGradient
               )}
             >
-              <Gift className="w-4 h-4" />
-              Publish game
+              <Gift className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <span className="sm:hidden">Publish</span>
+              <span className="hidden sm:inline">Publish game</span>
             </Button>
           )}
         </div>

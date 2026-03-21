@@ -18,7 +18,6 @@ interface PublishStepProps {
   backLabel?: string;
   theme: GameTheme;
   titlePlaceholder?: string;
-  /** Optional settings rows (ToggleSetting components) rendered inside the settings card */
   children?: React.ReactNode;
 }
 
@@ -44,22 +43,24 @@ export function PublishStep({
   return (
     <>
       <div className="space-y-1">
-        <h1 className="text-2xl font-bold tracking-tight">Almost there! 🚀</h1>
-        <p className="text-muted-foreground text-sm">
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
+          Almost there! 🚀
+        </h1>
+        <p className="text-muted-foreground text-xs sm:text-sm">
           Give your game a title and choose sharing options before sending it
           off.
         </p>
       </div>
 
       {/* Settings card */}
-      <div className="rounded-3xl border border-border bg-background p-6 shadow-sm space-y-5">
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Game title</label>
+      <div className="rounded-2xl sm:rounded-3xl border border-border bg-background p-4 sm:p-6 shadow-sm space-y-4 sm:space-y-5">
+        <div className="space-y-1.5 sm:space-y-2">
+          <label className="text-xs sm:text-sm font-medium">Game title</label>
           <Input
             placeholder={placeholder}
             value={gameTitle}
             onChange={(e) => onGameTitleChange(e.target.value)}
-            className="h-11 rounded-xl"
+            className="h-10 sm:h-11 rounded-lg sm:rounded-xl text-sm"
           />
         </div>
 
@@ -70,22 +71,24 @@ export function PublishStep({
       {/* Publish CTA */}
       <div
         className={cn(
-          "rounded-3xl bg-linear-to-br p-6 text-white",
+          "rounded-2xl sm:rounded-3xl bg-linear-to-br p-4 sm:p-6 text-white",
           theme.publishGradient
         )}
       >
-        <p className="font-bold text-lg mb-1">Ready to share! 🎉</p>
-        <p className="text-white/70 text-sm mb-4">
+        <p className="font-bold text-base sm:text-lg mb-0.5 sm:mb-1">
+          Ready to share! 🎉
+        </p>
+        <p className="text-white/70 text-xs sm:text-sm mb-3 sm:mb-4 leading-snug">
           We'll generate a unique link you can send to{" "}
           {recipient.name || "your recipient"}.
         </p>
 
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
           <Button
             disabled={!canPublish}
             onClick={onPublish}
             className={cn(
-              "flex-1 bg-white hover:bg-white/90 font-semibold h-11 rounded-xl gap-2",
+              "flex-1 bg-white hover:bg-white/90 font-semibold h-10 sm:h-11 rounded-xl gap-2 text-sm",
               theme.publishButtonText
             )}
           >
@@ -96,14 +99,15 @@ export function PublishStep({
             variant="outline"
             onClick={onPreview}
             disabled={previewDisabled}
-            className="h-11 rounded-xl border-white/30 text-white hover:bg-white/10"
+            className="h-10 sm:h-11 rounded-xl border-white/30 text-white hover:bg-white/10 w-full sm:w-auto"
           >
             <Eye className="w-4 h-4" />
+            <span className="sm:hidden ml-1.5">Preview</span>
           </Button>
         </div>
 
         {!canPublish && missingFields.length > 0 && (
-          <p className="text-white/60 text-xs mt-3">
+          <p className="text-white/60 text-[11px] sm:text-xs mt-2.5 sm:mt-3 leading-snug">
             Please fill in: {missingFields.join(" • ")}
           </p>
         )}
@@ -113,7 +117,7 @@ export function PublishStep({
         <Button
           variant="ghost"
           onClick={onBack}
-          className="text-muted-foreground"
+          className="text-muted-foreground text-sm h-9 sm:h-10"
         >
           {backLabel}
         </Button>

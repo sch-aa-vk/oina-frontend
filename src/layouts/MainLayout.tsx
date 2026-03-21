@@ -2,6 +2,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import {
   SidebarInset,
   SidebarProvider,
+  SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { Outlet } from "react-router-dom";
 
@@ -10,11 +11,10 @@ export default function MainLayout() {
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <header className="flex h-4 shrink-0 items-center gap-2">
-          <div className="flex items-center gap-2 px-4">
-          </div>
+        <header className="flex h-12 shrink-0 items-center gap-2 px-3 md:hidden">
+          <SidebarTrigger className="h-8 w-8" />
         </header>
-        <div className="flex flex-1 flex-col gap-6 p-4 pt-0">
+        <div className="flex flex-1 flex-col gap-4 sm:gap-6 p-3 sm:p-4 pt-0">
           <Outlet />
         </div>
       </SidebarInset>

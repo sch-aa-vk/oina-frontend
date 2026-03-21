@@ -119,13 +119,15 @@ function TemplateCard({ game }: { game: TemplateGame }) {
   const navigate = useNavigate();
 
   return (
-    <div className="group flex flex-col gap-3">
+    <div className="group flex flex-col gap-2 sm:gap-3">
       {/* Visual tile */}
       <div
+        onClick={() => navigate(game.route)}
         className={cn(
-          "relative h-44 rounded-2xl overflow-hidden cursor-pointer transition-all duration-300",
+          "relative h-32 sm:h-44 rounded-xl sm:rounded-2xl overflow-hidden cursor-pointer transition-all duration-300",
           "ring-1 ring-black/5 dark:ring-white/5",
-          "group-hover:ring-2 group-hover:ring-primary/40 group-hover:shadow-xl group-hover:-translate-y-1"
+          "group-hover:ring-2 group-hover:ring-primary/40 group-hover:shadow-xl group-hover:-translate-y-1",
+          "active:scale-[0.98] sm:active:scale-100"
         )}
       >
         {/* Gradient background */}
@@ -148,24 +150,27 @@ function TemplateCard({ game }: { game: TemplateGame }) {
         />
 
         {/* Emoji */}
-        <div className="absolute top-4 left-4 text-4xl drop-shadow-sm select-none">
+        <div className="absolute top-3 sm:top-4 left-3 sm:left-4 text-2xl sm:text-4xl drop-shadow-sm select-none">
           {game.emoji}
         </div>
 
         {/* Tag badge */}
-        <div className="absolute top-4 right-4">
-          <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-white/20 text-white backdrop-blur-sm">
+        <div className="absolute top-3 sm:top-4 right-3 sm:right-4">
+          <span className="text-[10px] sm:text-xs font-semibold px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full bg-white/20 text-white backdrop-blur-sm">
             {game.tag}
           </span>
         </div>
 
-        {/* Hover overlay */}
-        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+        {/* Hover overlay — desktop only */}
+        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hidden sm:block" />
 
-        {/* Create button */}
+        {/* Create button — desktop hover only */}
         <button
-          onClick={() => navigate(game.route)}
-          className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200"
+          onClick={(e) => {
+            e.stopPropagation();
+            navigate(game.route);
+          }}
+          className="absolute inset-0 items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 hidden sm:flex"
           aria-label={`Create ${game.name} game`}
         >
           <div className="flex items-center gap-2 bg-white text-gray-900 font-semibold text-sm px-4 py-2.5 rounded-full shadow-lg hover:scale-105 transition-transform">
@@ -175,16 +180,16 @@ function TemplateCard({ game }: { game: TemplateGame }) {
         </button>
 
         {/* AI sparkle indicator */}
-        <div className="absolute bottom-3 left-3 flex items-center gap-1 text-white/70 text-xs">
-          <Sparkles className="w-3 h-3" />
+        <div className="absolute bottom-2 sm:bottom-3 left-2 sm:left-3 flex items-center gap-1 text-white/70 text-[10px] sm:text-xs">
+          <Sparkles className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
           <span>AI-powered</span>
         </div>
       </div>
 
       {/* Info */}
       <div className="px-0.5 space-y-0.5">
-        <p className="text-sm font-semibold">{game.name}</p>
-        <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
+        <p className="text-xs sm:text-sm font-semibold">{game.name}</p>
+        <p className="text-[10px] sm:text-xs text-muted-foreground leading-relaxed line-clamp-2">
           {game.description}
         </p>
       </div>
@@ -203,13 +208,15 @@ function TrendingCard({ game }: { game: TrendingGame }) {
       : game.plays.toString();
 
   return (
-    <div className="group flex flex-col gap-3">
+    <div className="group flex flex-col gap-2 sm:gap-3">
       {/* Visual tile */}
       <div
+        onClick={() => navigate(`/game/${game.id}`)}
         className={cn(
-          "relative h-40 rounded-2xl overflow-hidden cursor-pointer transition-all duration-300",
+          "relative h-28 sm:h-40 rounded-xl sm:rounded-2xl overflow-hidden cursor-pointer transition-all duration-300",
           "ring-1 ring-black/5 dark:ring-white/5",
-          "group-hover:ring-2 group-hover:ring-primary/30 group-hover:shadow-lg group-hover:-translate-y-0.5"
+          "group-hover:ring-2 group-hover:ring-primary/30 group-hover:shadow-lg group-hover:-translate-y-0.5",
+          "active:scale-[0.98] sm:active:scale-100"
         )}
       >
         {/* Gradient background — muted version */}
@@ -222,25 +229,28 @@ function TrendingCard({ game }: { game: TrendingGame }) {
         <div className="absolute inset-0 bg-muted/40 dark:bg-muted/60" />
 
         {/* Emoji */}
-        <div className="absolute inset-0 flex items-center justify-center text-5xl select-none opacity-60 group-hover:opacity-40 transition-opacity">
+        <div className="absolute inset-0 flex items-center justify-center text-3xl sm:text-5xl select-none opacity-60 group-hover:opacity-40 transition-opacity">
           {game.emoji}
         </div>
 
         {/* Plays badge */}
-        <div className="absolute top-3 right-3">
-          <span className="flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full bg-background/70 backdrop-blur-sm text-muted-foreground">
-            <TrendingUp className="w-3 h-3" />
+        <div className="absolute top-2 sm:top-3 right-2 sm:right-3">
+          <span className="flex items-center gap-0.5 sm:gap-1 text-[10px] sm:text-xs font-medium px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full bg-background/70 backdrop-blur-sm text-muted-foreground">
+            <TrendingUp className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
             {formattedPlays}
           </span>
         </div>
 
-        {/* Hover overlay */}
-        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+        {/* Hover overlay — desktop only */}
+        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hidden sm:block" />
 
-        {/* View button */}
-        <div className="absolute inset-0 flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-all duration-200">
+        {/* View button — desktop hover only */}
+        <div className="absolute inset-0 items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-all duration-200 hidden sm:flex">
           <button
-            onClick={() => navigate(`/game/${game.id}`)}
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/game/${game.id}`);
+            }}
             className="flex items-center gap-2 bg-white text-gray-900 font-semibold text-sm px-4 py-2.5 rounded-full shadow-lg hover:scale-105 transition-transform"
             aria-label={`View ${game.name}`}
           >
@@ -253,8 +263,12 @@ function TrendingCard({ game }: { game: TrendingGame }) {
       {/* Info */}
       <div className="px-0.5 flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="text-sm font-semibold truncate">{game.name}</p>
-          <p className="text-xs text-muted-foreground">by {game.author}</p>
+          <p className="text-xs sm:text-sm font-semibold truncate">
+            {game.name}
+          </p>
+          <p className="text-[10px] sm:text-xs text-muted-foreground">
+            by {game.author}
+          </p>
         </div>
       </div>
     </div>
@@ -275,21 +289,26 @@ function SectionHeader({
   badge?: string;
 }) {
   return (
-    <div className="flex items-start justify-between gap-4 mb-5">
-      <div className="flex items-start gap-3">
-        <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
-          <Icon className="w-4 h-4 text-primary" />
+    <div className="flex items-start justify-between gap-3 sm:gap-4 mb-3.5 sm:mb-5">
+      <div className="flex items-start gap-2 sm:gap-3">
+        <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+          <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" />
         </div>
         <div>
-          <div className="flex items-center gap-2">
-            <h2 className="text-base font-bold">{title}</h2>
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <h2 className="text-sm sm:text-base font-bold">{title}</h2>
             {badge && (
-              <Badge variant="secondary" className="text-xs font-normal">
+              <Badge
+                variant="secondary"
+                className="text-[10px] sm:text-xs font-normal"
+              >
                 {badge}
               </Badge>
             )}
           </div>
-          <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>
+          <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">
+            {subtitle}
+          </p>
         </div>
       </div>
     </div>
@@ -300,24 +319,24 @@ function SectionHeader({
 
 export default function Home() {
   return (
-    <div className="space-y-6 pb-8">
+    <div className="space-y-4 sm:space-y-6 pb-6 sm:pb-8">
       {/* Hero banner */}
-      <div className="relative rounded-3xl overflow-hidden bg-linear-to-br from-violet-600 via-purple-600 to-pink-600 p-6 text-white">
+      <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden bg-linear-to-br from-violet-600 via-purple-600 to-pink-600 p-4 sm:p-6 text-white">
         {/* Decorative blobs */}
-        <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-white/10 blur-2xl" />
-        <div className="absolute -bottom-6 -left-6 w-32 h-32 rounded-full bg-white/10 blur-xl" />
+        <div className="absolute -top-8 -right-8 w-32 sm:w-40 h-32 sm:h-40 rounded-full bg-white/10 blur-2xl" />
+        <div className="absolute -bottom-6 -left-6 w-24 sm:w-32 h-24 sm:h-32 rounded-full bg-white/10 blur-xl" />
 
-        <div className="relative space-y-3">
-          <div className="flex items-center gap-2 text-white/70 text-xs font-medium">
-            <Sparkles className="w-3.5 h-3.5" />
+        <div className="relative space-y-2 sm:space-y-3">
+          <div className="flex items-center gap-1.5 sm:gap-2 text-white/70 text-[10px] sm:text-xs font-medium">
+            <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
             AI-powered mini-games
           </div>
-          <h1 className="text-2xl font-bold leading-snug">
+          <h1 className="text-xl sm:text-2xl font-bold leading-snug">
             Create a game for
             <br />
             someone you love 🎁
           </h1>
-          <p className="text-white/70 text-sm max-w-xs leading-relaxed">
+          <p className="text-white/70 text-xs sm:text-sm max-w-xs leading-relaxed">
             Pick a template, personalize with AI, and share a unique game your
             recipient will never forget.
           </p>
@@ -325,14 +344,14 @@ export default function Home() {
       </div>
 
       {/* Templates section */}
-      <section className="rounded-2xl bg-muted/40 dark:bg-muted/20 p-5">
+      <section className="rounded-xl sm:rounded-2xl bg-muted/40 dark:bg-muted/20 p-3 sm:p-5">
         <SectionHeader
           icon={Layers}
           title="Templates"
           subtitle="Start from a game type and make it yours"
           badge={`${templateGames.length} types`}
         />
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-4">
           {templateGames.map((game) => (
             <TemplateCard key={game.id} game={game} />
           ))}
@@ -340,14 +359,14 @@ export default function Home() {
       </section>
 
       {/* Trending section */}
-      <section className="rounded-2xl bg-muted/40 dark:bg-muted/20 p-5">
+      <section className="rounded-xl sm:rounded-2xl bg-muted/40 dark:bg-muted/20 p-3 sm:p-5">
         <SectionHeader
           icon={TrendingUp}
           title="Trending"
           subtitle="Games others are playing right now"
           badge="Community"
         />
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-4">
           {trendingGames.map((game) => (
             <TrendingCard key={game.id} game={game} />
           ))}
