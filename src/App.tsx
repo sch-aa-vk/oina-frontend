@@ -1,12 +1,18 @@
 import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/contexts/AuthProvider";
 import MainLayout from "@/layouts/MainLayout";
 import AuthLayout from "@/layouts/AuthLayout";
+import ProtectedRoute from "@/components/ProtectedRoute";
+import GuestRoute from "@/components/GuestRoute";
 
 const Home = lazy(() => import("@/pages/Home"));
 const Profile = lazy(() => import("@/pages/Profile"));
 const Login = lazy(() => import("@/pages/auth/Login"));
 const Register = lazy(() => import("@/pages/auth/Register"));
+const VerifyEmail = lazy(() => import("@/pages/auth/VerifyEmail"));
+const ForgotPassword = lazy(() => import("@/pages/auth/ForgotPassword"));
+const ResetPassword = lazy(() => import("@/pages/auth/ResetPassword"));
 const ChooseMe = lazy(() => import("@/pages/games/ChooseMe"));
 const GuessByEmoji = lazy(() => import("@/pages/games/GuessByEmoji"));
 const Crossword = lazy(() => import("@/pages/games/Crossword"));
@@ -14,24 +20,33 @@ const Crossword = lazy(() => import("@/pages/games/Crossword"));
 export default function App() {
   return (
     <BrowserRouter>
-      <Suspense>
-        <Routes>
-          {/* Main pages — with sidebar */}
-          <Route element={<MainLayout />}>
-            <Route path="/" element={<Home />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/create/choose-me" element={<ChooseMe />} />
-            <Route path="/create/guess-by-emoji" element={<GuessByEmoji />} />
-            <Route path="/create/crossword" element={<Crossword />} />
-          </Route>
+      <AuthProvider>
+        <Suspense>
+          <Routes>
+            {/* Protected pages — with sidebar */}
+            <Route element={<ProtectedRoute />}>
+              <Route element={<MainLayout />}>
+                <Route path="/" element={<Home />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/create/choose-me" element={<ChooseMe />} />
+                <Route path="/create/guess-by-emoji" element={<GuessByEmoji />} />
+                <Route path="/create/crossword" element={<Crossword />} />
+              </Route>
+            </Route>
 
-          {/* Auth pages — no sidebar */}
-          <Route element={<AuthLayout />}>
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-          </Route>
-        </Routes>
-      </Suspense>
+            {/* Auth pages — no sidebar, guest only */}
+            <Route element={<GuestRoute />}>
+              <Route element={<AuthLayout />}>
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/verify-email" element={<VerifyEmail />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
+              </Route>
+            </Route>
+          </Routes>
+        </Suspense>
+      </AuthProvider>
     </BrowserRouter>
   );
 }

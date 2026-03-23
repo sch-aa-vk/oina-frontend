@@ -4,6 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/contexts/AuthContext";
 
 const myGames = [
   {
@@ -33,27 +34,23 @@ const myGames = [
 ];
 
 export default function Profile() {
+  const { user } = useAuth();
+
+  const displayName = user?.displayName || user?.username || "";
+  const initials = displayName.slice(0, 2).toUpperCase() || user?.email?.slice(0, 2).toUpperCase() || "??";
+
   const [isEditing, setIsEditing] = useState(false);
-  const [name, setName] = useState("Name Name");
-  const [email, setEmail] = useState("email@mail.com");
-  const [bio, setBio] = useState(
-    "lorep ipsum"
-  );
-  const [tempName, setTempName] = useState(name);
-  const [tempEmail, setTempEmail] = useState(email);
-  const [tempBio, setTempBio] = useState(bio);
+  const [tempName, setTempName] = useState(displayName);
+  const [tempBio, setTempBio] = useState(user?.bio || "");
 
   const handleEdit = () => {
-    setTempName(name);
-    setTempEmail(email);
-    setTempBio(bio);
+    setTempName(displayName);
+    setTempBio(user?.bio || "");
     setIsEditing(true);
   };
 
   const handleSave = () => {
-    setName(tempName);
-    setEmail(tempEmail);
-    setBio(tempBio);
+    // TODO: call profile update API when available
     setIsEditing(false);
   };
 
@@ -69,8 +66,8 @@ export default function Profile() {
           {/* Avatar */}
           <div className="relative shrink-0">
             <Avatar className="size-24 ring-2 ring-border">
-              <AvatarImage src="/images/avatar.jpg" />
-              <AvatarFallback className="text-2xl">NN</AvatarFallback>
+              <AvatarImage src={user?.avatarUrl} />
+              <AvatarFallback className="text-2xl">{initials}</AvatarFallback>
             </Avatar>
             <button className="absolute -bottom-1 -right-1 bg-primary text-primary-foreground rounded-full p-1.5 shadow hover:scale-110 transition-transform">
               <Camera className="size-3" />
@@ -88,12 +85,6 @@ export default function Profile() {
                   placeholder="Your name"
                 />
                 <Input
-                  value={tempEmail}
-                  onChange={(e) => setTempEmail(e.target.value)}
-                  className="text-sm h-9 max-w-xs"
-                  placeholder="Your email"
-                />
-                <Input
                   value={tempBio}
                   onChange={(e) => setTempBio(e.target.value)}
                   className="text-sm h-9"
@@ -103,10 +94,14 @@ export default function Profile() {
             ) : (
               <>
                 <div>
-                  <h2 className="text-xl font-semibold">{name}</h2>
-                  <p className="text-sm text-muted-foreground">{email}</p>
+                  <h2 className="text-xl font-semibold">
+                    {displayName || "No name set"}
+                  </h2>
+                  <p className="text-sm text-muted-foreground">{user?.email}</p>
                 </div>
-                <p className="text-sm text-muted-foreground">{bio}</p>
+                <p className="text-sm text-muted-foreground">
+                  {user?.bio || "No bio yet."}
+                </p>
               </>
             )}
           </div>
@@ -133,20 +128,18 @@ export default function Profile() {
         {/* Stats row */}
         <div className="mt-5 pt-5 border-t flex gap-6">
           <div className="flex flex-col">
-            <span className="text-xl font-bold">{myGames.length}</span>
+            <span className="text-xl font-bold">{user?.totalGames ?? 0}</span>
             <span className="text-xs text-muted-foreground">Games</span>
           </div>
           <div className="flex flex-col">
-            <span className="text-xl font-bold">
-              {myGames.reduce((a, g) => a + g.plays, 0).toLocaleString()}
-            </span>
-            <span className="text-xs text-muted-foreground">Total Plays</span>
+            <span className="text-xl font-bold">{user?.gamesThisMonth ?? 0}</span>
+            <span className="text-xs text-muted-foreground">This Month</span>
           </div>
           <div className="flex flex-col">
             <span className="text-xl font-bold">
-              {myGames.reduce((a, g) => a + g.stars, 0)}
+              {user?.isVerified ? "Verified" : "Unverified"}
             </span>
-            <span className="text-xs text-muted-foreground">Stars</span>
+            <span className="text-xs text-muted-foreground">Status</span>
           </div>
         </div>
       </div>
