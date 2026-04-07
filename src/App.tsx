@@ -23,18 +23,25 @@ export default function App() {
       <AuthProvider>
         <Suspense>
           <Routes>
-            {/* Protected pages — with sidebar */}
+            {/* Public pages — accessible to everyone */}
+            <Route element={<MainLayout />}>
+              <Route path="/" element={<Home />} />
+            </Route>
+
+            {/* Protected pages — require auth */}
             <Route element={<ProtectedRoute />}>
               <Route element={<MainLayout />}>
-                <Route path="/" element={<Home />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/create/choose-me" element={<ChooseMe />} />
-                <Route path="/create/guess-by-emoji" element={<GuessByEmoji />} />
+                <Route
+                  path="/create/guess-by-emoji"
+                  element={<GuessByEmoji />}
+                />
                 <Route path="/create/crossword" element={<Crossword />} />
               </Route>
             </Route>
 
-            {/* Auth pages — no sidebar, guest only */}
+            {/* Auth pages */}
             <Route element={<GuestRoute />}>
               <Route element={<AuthLayout />}>
                 <Route path="/login" element={<Login />} />

@@ -29,7 +29,33 @@ export function NavUser() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  if (!user) return null;
+  if (!user) {
+    return (
+      // <SidebarMenu>
+      //   <SidebarMenuItem>
+      //     <SidebarMenuButton
+      //       size="lg"
+      //       onClick={() => navigate("/login")}
+      //       className="hover:cursor-pointer hover:bg-neutral-200 transition-colors duration-200"
+      //     >
+      //       <Avatar className="h-8 w-8 rounded-lg">
+      //         <AvatarFallback className="rounded-lg">
+      //           <User2Icon />
+      //         </AvatarFallback>
+      //       </Avatar>
+      //       <div className="grid flex-1 text-left text-sm leading-tight">
+      //         <span className="truncate font-medium">Sign in</span>
+      //         <span className="truncate text-xs text-muted-foreground">
+      //           to access your account
+      //         </span>
+      //       </div>
+      //       {/* <ChevronsUpDown className="ml-auto size-4" /> */}
+      //     </SidebarMenuButton>
+      //   </SidebarMenuItem>
+      // </SidebarMenu>
+      null
+    );
+  }
 
   const displayName = user.displayName || user.username || user.email;
   const initials = displayName.slice(0, 2).toUpperCase();
@@ -46,11 +72,13 @@ export function NavUser() {
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
               size="lg"
-              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:cursor-pointer hover:bg-neutral-200 transition-colors duration-200"
             >
               <Avatar className="h-8 w-8 rounded-lg">
                 <AvatarImage src={user.avatarUrl} alt={displayName} />
-                <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
+                <AvatarFallback className="rounded-lg">
+                  {initials}
+                </AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{displayName}</span>
@@ -65,11 +93,13 @@ export function NavUser() {
             align="end"
             sideOffset={4}
           >
-            <DropdownMenuLabel className="p-0 font-normal">
+            <DropdownMenuLabel className="p-0 font-normal ">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <Avatar className="h-8 w-8 rounded-lg">
                   <AvatarImage src={user.avatarUrl} alt={displayName} />
-                  <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
+                  <AvatarFallback className="rounded-lg">
+                    {initials}
+                  </AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-medium">{displayName}</span>
@@ -79,18 +109,21 @@ export function NavUser() {
             </DropdownMenuLabel>
             <DropdownMenuGroup>
               <Link to="/profile">
-                <DropdownMenuItem>
+                <DropdownMenuItem className="cursor-pointer [&:hover]:bg-neutral-200">
                   <BadgeCheck />
                   Account
                 </DropdownMenuItem>
               </Link>
-              <DropdownMenuItem>
+              <DropdownMenuItem className="cursor-pointer [&:hover]:bg-neutral-200">
                 <Bell />
                 Notifications
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleLogout}>
+            <DropdownMenuItem
+              onClick={handleLogout}
+              className="cursor-pointer [&:hover]:bg-neutral-200"
+            >
               <LogOut />
               Log out
             </DropdownMenuItem>

@@ -2,6 +2,7 @@ import { Plus, Eye, Sparkles, TrendingUp, Layers } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { useAuthGuard } from "@/hooks/useAuthGuard";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -117,6 +118,7 @@ const trendingGames: TrendingGame[] = [
 
 function TemplateCard({ game }: { game: TemplateGame }) {
   const navigate = useNavigate();
+  const { guard } = useAuthGuard();
 
   return (
     <div className="group flex flex-col gap-2 sm:gap-3">
@@ -168,7 +170,7 @@ function TemplateCard({ game }: { game: TemplateGame }) {
         <button
           onClick={(e) => {
             e.stopPropagation();
-            navigate(game.route);
+            guard(() => navigate(game.route));
           }}
           className="absolute inset-0 items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 hidden sm:flex"
           aria-label={`Create ${game.name} game`}

@@ -88,7 +88,7 @@ export function PublishStep({
             disabled={!canPublish}
             onClick={onPublish}
             className={cn(
-              "flex-1 bg-white hover:bg-white/90 font-semibold h-10 sm:h-11 rounded-xl gap-2 text-sm",
+              "flex-1 bg-white hover:bg-white/90 cursor-pointer font-semibold h-10 sm:h-11 rounded-xl gap-2 text-sm",
               theme.publishButtonText
             )}
           >
@@ -99,7 +99,7 @@ export function PublishStep({
             variant="outline"
             onClick={onPreview}
             disabled={previewDisabled}
-            className="h-10 sm:h-11 rounded-xl border-white/30 text-white hover:bg-white/10 w-full sm:w-auto"
+            className="h-10 bg-transparent cursor-pointer hover:text-white sm:h-11 rounded-xl border-white/30 text-white hover:bg-white/10 transition-transform duration-200 hover:scale-105 active:scale-95 w-full sm:w-auto"
           >
             <Eye className="w-4 h-4" />
             <span className="sm:hidden ml-1.5">Preview</span>

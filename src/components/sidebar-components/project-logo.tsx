@@ -32,7 +32,7 @@ export function ProjectLogo() {
           {isCollapsed ? (
             <SidebarTrigger className="absolute opacity-0 group-hover/logo:opacity-100 transition-opacity hover:bg-neutral-200" />
           ) : (
-            <SidebarTrigger className="hover:bg-neutral-200" size="lg" />
+            <SidebarTrigger className="hover:bg-neutral-200 cursor-pointer" size="lg" />
           )}
         </div>
       </SidebarMenuItem>
