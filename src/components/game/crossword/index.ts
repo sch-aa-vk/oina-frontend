@@ -5,6 +5,7 @@ export { InteractivePreviewGrid } from "./InteractivePreviewGrid";
 export { WordRow } from "./WordRow";
 export { MobileGridPanel } from "./MobileGridPanel";
 export { PreviewModal } from "./PreviewModal";
+export { GamePlay } from "./GamePlay";
 export {
   STEP_LABELS,
   MAX_WORDS,

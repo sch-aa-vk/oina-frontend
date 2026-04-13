@@ -4,7 +4,6 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface TemplateGame {
   id: number;
@@ -27,7 +26,6 @@ interface TrendingGame {
   image?: string;
 }
 
-// ─── Data ─────────────────────────────────────────────────────────────────────
 
 const templateGames: TemplateGame[] = [
   {
@@ -114,7 +112,6 @@ const trendingGames: TrendingGame[] = [
   },
 ];
 
-// ─── Template Card ────────────────────────────────────────────────────────────
 
 function TemplateCard({ game }: { game: TemplateGame }) {
   const navigate = useNavigate();
@@ -122,7 +119,6 @@ function TemplateCard({ game }: { game: TemplateGame }) {
 
   return (
     <div className="group flex flex-col gap-2 sm:gap-3">
-      {/* Visual tile */}
       <div
         onClick={() => navigate(game.route)}
         className={cn(
@@ -132,7 +128,6 @@ function TemplateCard({ game }: { game: TemplateGame }) {
           "active:scale-[0.98] sm:active:scale-100"
         )}
       >
-        {/* Gradient background */}
         <div
           className={cn(
             "absolute inset-0 bg-linear-to-br opacity-90",
@@ -140,7 +135,6 @@ function TemplateCard({ game }: { game: TemplateGame }) {
           )}
         />
 
-        {/* Decorative pattern */}
         <div
           className="absolute inset-0 opacity-10"
           style={{
@@ -151,22 +145,18 @@ function TemplateCard({ game }: { game: TemplateGame }) {
           }}
         />
 
-        {/* Emoji */}
         <div className="absolute top-3 sm:top-4 left-3 sm:left-4 text-2xl sm:text-4xl drop-shadow-sm select-none">
           {game.emoji}
         </div>
 
-        {/* Tag badge */}
         <div className="absolute top-3 sm:top-4 right-3 sm:right-4">
           <span className="text-[10px] sm:text-xs font-semibold px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full bg-white/20 text-white backdrop-blur-sm">
             {game.tag}
           </span>
         </div>
 
-        {/* Hover overlay — desktop only */}
         <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hidden sm:block" />
 
-        {/* Create button — desktop hover only */}
         <button
           onClick={(e) => {
             e.stopPropagation();
@@ -181,14 +171,12 @@ function TemplateCard({ game }: { game: TemplateGame }) {
           </div>
         </button>
 
-        {/* AI sparkle indicator */}
         <div className="absolute bottom-2 sm:bottom-3 left-2 sm:left-3 flex items-center gap-1 text-white/70 text-[10px] sm:text-xs">
           <Sparkles className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
           <span>AI-powered</span>
         </div>
       </div>
 
-      {/* Info */}
       <div className="px-0.5 space-y-0.5">
         <p className="text-xs sm:text-sm font-semibold">{game.name}</p>
         <p className="text-[10px] sm:text-xs text-muted-foreground leading-relaxed line-clamp-2">
@@ -199,7 +187,6 @@ function TemplateCard({ game }: { game: TemplateGame }) {
   );
 }
 
-// ─── Trending Card ────────────────────────────────────────────────────────────
 
 function TrendingCard({ game }: { game: TrendingGame }) {
   const navigate = useNavigate();
@@ -211,7 +198,6 @@ function TrendingCard({ game }: { game: TrendingGame }) {
 
   return (
     <div className="group flex flex-col gap-2 sm:gap-3">
-      {/* Visual tile */}
       <div
         onClick={() => navigate(`/games/${game.id}`)}
         className={cn(
@@ -221,7 +207,6 @@ function TrendingCard({ game }: { game: TrendingGame }) {
           "active:scale-[0.98] sm:active:scale-100"
         )}
       >
-        {/* Gradient background — muted version */}
         <div
           className={cn(
             "absolute inset-0 bg-linear-to-br opacity-60",
@@ -230,12 +215,10 @@ function TrendingCard({ game }: { game: TrendingGame }) {
         />
         <div className="absolute inset-0 bg-muted/40 dark:bg-muted/60" />
 
-        {/* Emoji */}
         <div className="absolute inset-0 flex items-center justify-center text-3xl sm:text-5xl select-none opacity-60 group-hover:opacity-40 transition-opacity">
           {game.emoji}
         </div>
 
-        {/* Plays badge */}
         <div className="absolute top-2 sm:top-3 right-2 sm:right-3">
           <span className="flex items-center gap-0.5 sm:gap-1 text-[10px] sm:text-xs font-medium px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full bg-background/70 backdrop-blur-sm text-muted-foreground">
             <TrendingUp className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
@@ -243,10 +226,8 @@ function TrendingCard({ game }: { game: TrendingGame }) {
           </span>
         </div>
 
-        {/* Hover overlay — desktop only */}
         <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hidden sm:block" />
 
-        {/* View button — desktop hover only */}
         <div className="absolute inset-0 items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-all duration-200 hidden sm:flex">
           <button
             onClick={(e) => {
@@ -262,7 +243,6 @@ function TrendingCard({ game }: { game: TrendingGame }) {
         </div>
       </div>
 
-      {/* Info */}
       <div className="px-0.5 flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="text-xs sm:text-sm font-semibold truncate">
@@ -277,7 +257,6 @@ function TrendingCard({ game }: { game: TrendingGame }) {
   );
 }
 
-// ─── Section Header ───────────────────────────────────────────────────────────
 
 function SectionHeader({
   icon: Icon,
@@ -317,14 +296,11 @@ function SectionHeader({
   );
 }
 
-// ─── Home Page ────────────────────────────────────────────────────────────────
 
 export default function Home() {
   return (
     <div className="space-y-4 sm:space-y-6 pb-6 sm:pb-8">
-      {/* Hero banner */}
       <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden bg-linear-to-br from-violet-600 via-purple-600 to-pink-600 p-4 sm:p-6 text-white">
-        {/* Decorative blobs */}
         <div className="absolute -top-8 -right-8 w-32 sm:w-40 h-32 sm:h-40 rounded-full bg-white/10 blur-2xl" />
         <div className="absolute -bottom-6 -left-6 w-24 sm:w-32 h-24 sm:h-32 rounded-full bg-white/10 blur-xl" />
 
@@ -345,7 +321,6 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Templates section */}
       <section className="rounded-xl sm:rounded-2xl bg-muted/40 dark:bg-muted/20 p-3 sm:p-5">
         <SectionHeader
           icon={Layers}
@@ -360,7 +335,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Trending section */}
       <section className="rounded-xl sm:rounded-2xl bg-muted/40 dark:bg-muted/20 p-3 sm:p-5">
         <SectionHeader
           icon={TrendingUp}

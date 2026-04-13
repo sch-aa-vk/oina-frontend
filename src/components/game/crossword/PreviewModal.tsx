@@ -1,4 +1,3 @@
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { CROSSWORD_THEME } from "@/components/game";
 import type { Recipient } from "@/components/game";
@@ -17,7 +16,6 @@ export function PreviewModal({
   grid,
   recipient,
   personalMessage,
-  onClose,
 }: PreviewModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50 backdrop-blur-sm">
@@ -33,14 +31,6 @@ export function PreviewModal({
                 : "Your crossword"}
             </p>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onClose}
-            className="rounded-lg sm:rounded-xl h-8 sm:h-9 text-xs shrink-0"
-          >
-            Close
-          </Button>
         </div>
         <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
           {personalMessage && (
@@ -48,7 +38,7 @@ export function PreviewModal({
               className={cn(
                 "px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl border",
                 CROSSWORD_THEME.messageBg,
-                CROSSWORD_THEME.messageBorder
+                "border-border"
               )}
             >
               <p

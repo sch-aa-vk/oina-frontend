@@ -1,38 +1,20 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, Eye, Gamepad2, Heart, Lock, Globe } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { gamesService } from "@/services/games";
-import type { GameResponse } from "@/types/games";
+import {
+  ChooseMeGamePlay,
+  GuessByEmojiGamePlay,
+  CrosswordGamePlay,
+  buildCrosswordGrid,
+} from "@/components/game";
+import type { GameResponse, GameType } from "@/types/games";
+import type { Question } from "@/components/game/choose-me";
+import type { EmojiPuzzle } from "@/components/game/guess-by-emoji";
+import type { CrosswordWord } from "@/components/game/crossword";
+import type { Recipient } from "@/components/game";
 
 type ViewState = "loading" | "ready" | "not-found" | "forbidden" | "error";
-
-function formatDate(value: string): string {
-  return new Date(value).toLocaleString();
-}
-
-function VisibilityBadge({ visibility }: { visibility: GameResponse["visibility"] }) {
-  if (visibility === "public") {
-    return (
-      <Badge variant="secondary" className="gap-1">
-        <Globe className="size-3" />
-        Public
-      </Badge>
-    );
-  }
-
-  if (visibility === "private-link") {
-    return (
-      <Badge variant="secondary" className="gap-1">
-        <Lock className="size-3" />
-        Private link
-      </Badge>
-    );
-  }
-
-  return <Badge variant="outline">Draft</Badge>;
-}
 
 export default function GameDetails() {
   const { gameId = "" } = useParams<{ gameId: string }>();
@@ -107,12 +89,78 @@ export default function GameDetails() {
     };
   }, [gameId, hasGameId]);
 
-  const contentPreview = useMemo(() => {
-    if (!game) {
-      return "";
+  const gamePlayContent = useMemo(() => {
+    if (!game) return null;
+
+    const content = game.content;
+    const recipient: Recipient = (content.recipient as Recipient) || {
+      name: "Friend",
+      occasion: "",
+    };
+    const personalMessage = (content.personalMessage as string) || "";
+
+    const gameType = game.type as GameType;
+
+    if (gameType === "choose-me") {
+      const questions = (content.questions as Question[]) || [];
+      const settings = content.settings as { shuffle?: boolean } || {};
+      return (
+        <ChooseMeGamePlay
+          questions={questions}
+          recipient={recipient}
+          personalMessage={personalMessage}
+          shuffle={settings.shuffle || false}
+        />
+      );
     }
-    return JSON.stringify(game.content, null, 2);
+
+    if (gameType === "guess-by-emoji") {
+      const puzzles = (content.puzzles as EmojiPuzzle[]) || [];
+      const settings = content.settings as { showAnswers?: boolean } || {};
+      return (
+        <GuessByEmojiGamePlay
+          puzzles={puzzles}
+          recipient={recipient}
+          personalMessage={personalMessage}
+          showAnswers={settings.showAnswers || false}
+        />
+      );
+    }
+
+    if (gameType === "crossword") {
+      const words = (content.words as CrosswordWord[]) || [];
+      const settings = content.settings as { showSolution?: boolean } || {};
+      const grid = buildCrosswordGrid(words);
+
+      if (!grid) {
+        return (
+          <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950 dark:to-teal-950 flex items-center justify-center p-4">
+            <div className="bg-background rounded-3xl border border-border shadow-2xl p-8 max-w-md w-full space-y-4">
+              <p className="text-lg font-semibold">Could not load game</p>
+              <p className="text-sm text-muted-foreground">
+                The crossword grid could not be generated from the saved words.
+              </p>
+            </div>
+          </div>
+        );
+      }
+
+      return (
+        <CrosswordGamePlay
+          grid={grid}
+          recipient={recipient}
+          personalMessage={personalMessage}
+          showSolution={settings.showSolution || false}
+        />
+      );
+    }
+
+    return null;
   }, [game]);
+
+  if (gamePlayContent) {
+    return gamePlayContent;
+  }
 
   if (!hasGameId) {
     return (
@@ -174,61 +222,5 @@ export default function GameDetails() {
     );
   }
 
-  return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between gap-3">
-        <Button asChild variant="ghost" className="px-2">
-          <Link to="/profile">
-            <ArrowLeft className="size-4" />
-            Back
-          </Link>
-        </Button>
-        <VisibilityBadge visibility={game.visibility} />
-      </div>
-
-      <div className="rounded-xl border bg-card p-5 space-y-3">
-        <p className="text-xs text-muted-foreground uppercase tracking-wider">
-          {game.type}
-        </p>
-        <h1 className="text-2xl font-bold">{game.title}</h1>
-        <p className="text-sm text-muted-foreground">
-          {game.description || "No description"}
-        </p>
-
-        <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-          <span className="flex items-center gap-1">
-            <Eye className="size-3" />
-            {game.viewCount} views
-          </span>
-          <span className="flex items-center gap-1">
-            <Gamepad2 className="size-3" />
-            {game.playCount} plays
-          </span>
-          <span className="flex items-center gap-1">
-            <Heart className="size-3" />
-            {game.likeCount} likes
-          </span>
-        </div>
-
-        <div className="text-xs text-muted-foreground">
-          Updated: {formatDate(game.updatedAt)}
-        </div>
-      </div>
-
-      <div className="rounded-xl border bg-card p-5 space-y-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-          Game content
-        </h2>
-        <pre className="rounded-lg bg-muted p-3 text-xs overflow-x-auto">
-          {contentPreview}
-        </pre>
-      </div>
-
-      {errorMessage && (
-        <p className="text-xs text-muted-foreground">
-          Note: {errorMessage}
-        </p>
-      )}
-    </div>
-  );
+  return null;
 }

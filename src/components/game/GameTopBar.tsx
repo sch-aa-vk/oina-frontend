@@ -33,7 +33,6 @@ export function GameTopBar({
   return (
     <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border">
       <div className="max-w-3xl mx-auto px-3 sm:px-6 h-12 sm:h-16 flex items-center justify-between gap-2 sm:gap-4">
-        {/* Left: back + steps */}
         <div className="flex items-center gap-2 sm:gap-4 min-w-0">
           <Button
             variant="ghost"
@@ -59,7 +58,6 @@ export function GameTopBar({
           </div>
         </div>
 
-        {/* Right: preview + continue/publish */}
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           <Button
             variant="outline"

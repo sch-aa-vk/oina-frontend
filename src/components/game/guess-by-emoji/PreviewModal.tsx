@@ -36,8 +36,13 @@ export function PreviewModal({
     if (!guess.trim()) return;
     const correct =
       guess.trim().toLowerCase() === puzzle.answer.trim().toLowerCase();
-    setState(correct ? "correct" : "wrong");
-    if (correct) setScore((s) => s + 1);
+    if (correct) {
+      setState("correct");
+      setScore((s) => s + 1);
+      return;
+    }
+
+    setState("wrong");
   };
 
   const handleNext = (): void => {
@@ -126,22 +131,10 @@ export function PreviewModal({
             <p className="text-xs sm:text-sm font-semibold text-emerald-600 dark:text-emerald-400">
               Correct!
             </p>
-            <p className="text-[10px] sm:text-xs text-muted-foreground">
-              The answer was: {puzzle.answer}
-            </p>
-          </div>
-        )}
-        {state === "wrong" && (
-          <div className="text-center space-y-0.5 sm:space-y-1">
-            <p className="text-xl sm:text-2xl">😅</p>
-            <p className="text-xs sm:text-sm font-semibold text-red-500">Not quite!</p>
-            <p className="text-[10px] sm:text-xs text-muted-foreground">
-              The answer was: {puzzle.answer}
-            </p>
           </div>
         )}
 
-        {state === "idle" && (
+        {state !== "correct" && (
           <div className="flex gap-1.5 sm:gap-2">
             <Input
               placeholder="Your guess…"
@@ -160,7 +153,15 @@ export function PreviewModal({
             </Button>
           </div>
         )}
-        {state !== "idle" && (
+
+        {state === "wrong" && (
+          <div className="text-center space-y-0.5 sm:space-y-1">
+            <p className="text-xl sm:text-2xl">😅</p>
+            <p className="text-xs sm:text-sm font-semibold text-red-500">Not quite. Try again!</p>
+          </div>
+        )}
+
+        {state === "correct" && (
           <Button onClick={handleNext} className="w-full rounded-lg sm:rounded-xl h-9 sm:h-10 text-sm">
             {isLast ? "Finish" : "Next puzzle →"}
           </Button>

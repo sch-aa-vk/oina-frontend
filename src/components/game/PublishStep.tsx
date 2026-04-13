@@ -60,7 +60,6 @@ export function PublishStep({
         </p>
       </div>
 
-      {/* Settings card */}
       <div className="rounded-2xl sm:rounded-3xl border border-border bg-background p-4 sm:p-6 shadow-sm space-y-4 sm:space-y-5">
         <div className="space-y-1.5 sm:space-y-2">
           <label className="text-xs sm:text-sm font-medium">Game title</label>
@@ -97,11 +96,9 @@ export function PublishStep({
           </div>
         </div>
 
-        {/* Game-specific toggle settings injected here */}
         {children}
       </div>
 
-      {/* Publish CTA */}
       <div
         className={cn(
           "rounded-2xl sm:rounded-3xl bg-linear-to-br p-4 sm:p-6 text-white",

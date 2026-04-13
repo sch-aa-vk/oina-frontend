@@ -40,7 +40,6 @@ export default function Profile() {
   };
 
   const handleSave = () => {
-    // TODO: call profile update API when available
     setIsEditing(false);
   };
 
@@ -95,10 +94,8 @@ export default function Profile() {
 
   return (
     <div className="flex flex-col gap-6 w-full">
-      {/* Profile Card */}
       <div className="rounded-xl border bg-card p-6">
         <div className="flex items-start gap-6">
-          {/* Avatar */}
           <div className="relative shrink-0">
             <Avatar className="size-24 ring-2 ring-border">
               <AvatarImage src={user?.avatarUrl} />
@@ -109,7 +106,6 @@ export default function Profile() {
             </button>
           </div>
 
-          {/* Info */}
           <div className="flex-1 flex flex-col gap-3">
             {isEditing ? (
               <>
@@ -141,7 +137,6 @@ export default function Profile() {
             )}
           </div>
 
-          {/* Edit / Save / Cancel */}
           <div className="flex gap-2 shrink-0">
             {isEditing ? (
               <>
@@ -160,7 +155,6 @@ export default function Profile() {
           </div>
         </div>
 
-        {/* Stats row */}
         <div className="mt-5 pt-5 border-t flex gap-6">
           <div className="flex flex-col">
             <span className="text-xl font-bold">{user?.totalGames ?? 0}</span>
@@ -179,7 +173,6 @@ export default function Profile() {
         </div>
       </div>
 
-      {/* My Games */}
       <div>
         <h2 className="text-lg font-semibold mb-4">My Games</h2>
         {isLoadingGames ? (

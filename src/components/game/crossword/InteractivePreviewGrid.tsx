@@ -1,7 +1,6 @@
 import { useState, useCallback, useRef } from "react";
-import { Check, RefreshCw } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import type { CrosswordGrid, Direction } from "./types";
 
@@ -12,9 +11,20 @@ export function InteractivePreviewGrid({ grid }: { grid: CrosswordGrid }) {
     c: number;
   } | null>(null);
   const [selectedDir, setSelectedDir] = useState<Direction>("across");
-  const [revealed, setRevealed] = useState<boolean>(false);
   const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const key = (r: number, c: number) => `${r}-${c}`;
+
+  const focusCell = useCallback((r: number, c: number): void => {
+    const input = inputRefs.current[key(r, c)];
+    if (!input) return;
+    input.focus();
+    input.select();
+  }, []);
+
+  const normalizeLetter = (value: string): string => {
+    const lettersOnly = value.replace(/[^\p{L}]/gu, "");
+    return lettersOnly.slice(-1).toLocaleUpperCase();
+  };
 
   const getHighlightedCells = useCallback((): Set<string> => {
     if (!selectedCell) return new Set();
@@ -35,19 +45,42 @@ export function InteractivePreviewGrid({ grid }: { grid: CrosswordGrid }) {
     return highlighted;
   }, [selectedCell, selectedDir, grid.placedWords]);
 
+  const getCorrectCells = useCallback((): Set<string> => {
+    const correct = new Set<string>();
+
+    for (const placedWord of grid.placedWords) {
+      const dr = placedWord.direction === "down" ? 1 : 0;
+      const dc = placedWord.direction === "across" ? 1 : 0;
+      const cells = Array.from({ length: placedWord.word.length }, (_, index) => ({
+        r: placedWord.row + dr * index,
+        c: placedWord.col + dc * index,
+        letter: placedWord.word[index]?.toLocaleUpperCase() ?? "",
+      }));
+
+      const isWordCorrect =
+        cells.length > 0 &&
+        cells.every(({ r, c, letter }) => (userInputs[key(r, c)] ?? "") === letter);
+
+      if (isWordCorrect) {
+        cells.forEach(({ r, c }) => {
+          correct.add(key(r, c));
+        });
+      }
+    }
+
+    return correct;
+  }, [grid.placedWords, userInputs]);
+
   const handleCellClick = (r: number, c: number): void => {
     if (grid.cells[r][c].isBlack) return;
     if (selectedCell?.r === r && selectedCell?.c === c)
       setSelectedDir((d) => (d === "across" ? "down" : "across"));
     else setSelectedCell({ r, c });
-    inputRefs.current[key(r, c)]?.focus();
+    focusCell(r, c);
   };
 
   const handleInput = (r: number, c: number, value: string): void => {
-    const letter = value
-      .replace(/[^a-zA-Z]/g, "")
-      .toUpperCase()
-      .slice(-1);
+    const letter = normalizeLetter(value);
     setUserInputs((prev) => ({ ...prev, [key(r, c)]: letter }));
     if (letter) {
       const dr = selectedDir === "down" ? 1 : 0,
@@ -56,7 +89,7 @@ export function InteractivePreviewGrid({ grid }: { grid: CrosswordGrid }) {
         nc = c + dc;
       if (nr < grid.rows && nc < grid.cols && !grid.cells[nr][nc].isBlack) {
         setSelectedCell({ r: nr, c: nc });
-        inputRefs.current[key(nr, nc)]?.focus();
+        focusCell(nr, nc);
       }
     }
   };
@@ -74,7 +107,7 @@ export function InteractivePreviewGrid({ grid }: { grid: CrosswordGrid }) {
       if (pr >= 0 && pc >= 0 && !grid.cells[pr][pc].isBlack) {
         setSelectedCell({ r: pr, c: pc });
         setUserInputs((prev) => ({ ...prev, [key(pr, pc)]: "" }));
-        inputRefs.current[key(pr, pc)]?.focus();
+        focusCell(pr, pc);
       }
       e.preventDefault();
     }
@@ -98,27 +131,14 @@ export function InteractivePreviewGrid({ grid }: { grid: CrosswordGrid }) {
         !grid.cells[nr][nc].isBlack
       ) {
         setSelectedCell({ r: nr, c: nc });
-        inputRefs.current[key(nr, nc)]?.focus();
+        focusCell(nr, nc);
       }
       e.preventDefault();
     }
   };
 
-  const checkAnswers = (): number => {
-    let correct = 0,
-      total = 0;
-    grid.cells.forEach((row, r) =>
-      row.forEach((cell, c) => {
-        if (!cell.isBlack) {
-          total++;
-          if ((userInputs[key(r, c)] ?? "") === cell.letter) correct++;
-        }
-      })
-    );
-    return Math.round((correct / total) * 100);
-  };
-
   const highlighted = getHighlightedCells();
+  const correctCells = getCorrectCells();
   const CELL = 32,
     CELL_SM = 36,
     NUM_SIZE = 8,
@@ -143,8 +163,7 @@ export function InteractivePreviewGrid({ grid }: { grid: CrosswordGrid }) {
                 input = userInputs[k] ?? "";
               const isSelected = selectedCell?.r === r && selectedCell?.c === c;
               const isHighlight = highlighted.has(k);
-              const isCorrect = revealed && input === cell.letter;
-              const isWrong = revealed && input !== "" && input !== cell.letter;
+              const isCorrect = correctCells.has(k);
               return (
                 <div
                   key={k}
@@ -153,14 +172,12 @@ export function InteractivePreviewGrid({ grid }: { grid: CrosswordGrid }) {
                     "relative flex items-center justify-center cursor-pointer transition-colors",
                     cell.isBlack
                       ? "bg-foreground cursor-default"
+                      : isCorrect
+                      ? "bg-emerald-100 dark:bg-emerald-900/40"
                       : isSelected
                       ? "bg-primary/20"
                       : isHighlight
                       ? "bg-primary/10"
-                      : isCorrect
-                      ? "bg-emerald-50 dark:bg-emerald-950/30"
-                      : isWrong
-                      ? "bg-red-50 dark:bg-red-950/30"
                       : "bg-background"
                   )}
                   style={{
@@ -189,16 +206,15 @@ export function InteractivePreviewGrid({ grid }: { grid: CrosswordGrid }) {
                           e.stopPropagation();
                           handleCellClick(r, c);
                         }}
+                        onFocus={(e) => e.currentTarget.select()}
                         className={cn(
                           "w-full h-full text-center font-bold uppercase bg-transparent outline-none border-none caret-transparent",
                           isCorrect
-                            ? "text-emerald-600 dark:text-emerald-400"
-                            : isWrong
-                            ? "text-red-500"
+                            ? "text-emerald-700 dark:text-emerald-300"
                             : "text-foreground"
                         )}
                         style={{ fontSize: "var(--letter-size)" }}
-                        maxLength={2}
+                        maxLength={1}
                         autoComplete="off"
                         autoCorrect="off"
                         spellCheck={false}
@@ -216,32 +232,14 @@ export function InteractivePreviewGrid({ grid }: { grid: CrosswordGrid }) {
           variant="outline"
           size="sm"
           className="h-7 sm:h-8 text-[10px] sm:text-xs gap-1 sm:gap-1.5 px-2 sm:px-3"
-          onClick={() => setRevealed(true)}
-        >
-          <Check className="w-3 h-3" />
-          Check
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-7 sm:h-8 text-[10px] sm:text-xs gap-1 sm:gap-1.5 px-2 sm:px-3"
           onClick={() => {
             setUserInputs({});
-            setRevealed(false);
             setSelectedCell(null);
           }}
         >
           <RefreshCw className="w-3 h-3" />
           Reset
         </Button>
-        {revealed && (
-          <Badge
-            variant="secondary"
-            className="h-7 sm:h-8 px-2 sm:px-3 text-[10px] sm:text-xs"
-          >
-            {checkAnswers()}% correct
-          </Badge>
-        )}
       </div>
     </div>
   );

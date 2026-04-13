@@ -24,12 +24,10 @@ export default function App() {
       <AuthProvider>
         <Suspense>
           <Routes>
-            {/* Public pages — accessible to everyone */}
             <Route element={<MainLayout />}>
               <Route path="/" element={<Home />} />
             </Route>
 
-            {/* Protected pages — require auth */}
             <Route element={<ProtectedRoute />}>
               <Route element={<MainLayout />}>
                 <Route path="/profile" element={<Profile />} />
@@ -43,7 +41,6 @@ export default function App() {
               </Route>
             </Route>
 
-            {/* Auth pages */}
             <Route element={<GuestRoute />}>
               <Route element={<AuthLayout />}>
                 <Route path="/login" element={<Login />} />

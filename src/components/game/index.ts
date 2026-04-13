@@ -8,6 +8,10 @@ export { ToggleSetting } from "./ToggleSetting";
 export { PublishStep } from "./PublishStep";
 export { PreviewModalShell } from "./PreviewModal";
 
+export { GamePlay as ChooseMeGamePlay } from "./choose-me";
+export { GamePlay as GuessByEmojiGamePlay } from "./guess-by-emoji";
+export { GamePlay as CrosswordGamePlay, buildCrosswordGrid } from "./crossword";
+
 export type { Recipient, GameTheme } from "./types";
 export {
   OCCASIONS,

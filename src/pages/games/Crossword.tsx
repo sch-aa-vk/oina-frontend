@@ -258,7 +258,6 @@ export default function Crossword() {
               ))}
             </div>
 
-            {/* Mobile collapsible grid panel */}
             <MobileGridPanel
               grid={grid}
               isBuilding={isBuilding}
@@ -286,7 +285,6 @@ export default function Crossword() {
                 )}
               </div>
 
-              {/* Desktop sidebar — hidden on mobile */}
               <div className="hidden lg:block lg:col-span-2">
                 <div className="sticky top-24 space-y-3">
                   <div className="flex items-center justify-between">

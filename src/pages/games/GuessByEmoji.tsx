@@ -40,7 +40,7 @@ export default function GuessByEmoji() {
     createDefaultPuzzle(),
   ]);
   const [gameTitle, setGameTitle] = useState<string>("");
-  const [showAnswers, setShowAnswers] = useState<boolean>(true);
+  const [showAnswers, setShowAnswers] = useState<boolean>(false);
   const [visibility, setVisibility] = useState<Extract<GameVisibility, "private-link" | "public">>("private-link");
   const [isPublishing, setIsPublishing] = useState<boolean>(false);
   const [submitError, setSubmitError] = useState<string>("");
@@ -333,8 +333,8 @@ export default function GuessByEmoji() {
             >
               <ToggleSetting
                 icon={Lightbulb}
-                label="Reveal answer after each guess"
-                description="Show the correct answer whether they get it right or not"
+                label="Allow answer reveal after a miss"
+                description="Adds an optional reveal button after a wrong guess instead of showing the answer immediately"
                 value={showAnswers}
                 onChange={setShowAnswers}
               />
