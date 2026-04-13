@@ -9,7 +9,11 @@ interface PublishStepProps {
   recipient: Recipient;
   gameTitle: string;
   onGameTitleChange: (title: string) => void;
+  visibility: "private-link" | "public";
+  onVisibilityChange: (visibility: "private-link" | "public") => void;
   canPublish: boolean;
+  isPublishing?: boolean;
+  submitError?: string;
   missingFields: string[];
   onPublish: () => void;
   onPreview: () => void;
@@ -25,7 +29,11 @@ export function PublishStep({
   recipient,
   gameTitle,
   onGameTitleChange,
+  visibility,
+  onVisibilityChange,
   canPublish,
+  isPublishing = false,
+  submitError,
   missingFields,
   onPublish,
   onPreview,
@@ -60,8 +68,33 @@ export function PublishStep({
             placeholder={placeholder}
             value={gameTitle}
             onChange={(e) => onGameTitleChange(e.target.value)}
+            disabled={isPublishing}
             className="h-10 sm:h-11 rounded-lg sm:rounded-xl text-sm"
           />
+        </div>
+
+        <div className="space-y-1.5 sm:space-y-2">
+          <p className="text-xs sm:text-sm font-medium">Visibility</p>
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              type="button"
+              variant={visibility === "private-link" ? "default" : "outline"}
+              disabled={isPublishing}
+              onClick={() => onVisibilityChange("private-link")}
+              className="h-10 rounded-xl text-xs sm:text-sm"
+            >
+              Private link
+            </Button>
+            <Button
+              type="button"
+              variant={visibility === "public" ? "default" : "outline"}
+              disabled={isPublishing}
+              onClick={() => onVisibilityChange("public")}
+              className="h-10 rounded-xl text-xs sm:text-sm"
+            >
+              Public
+            </Button>
+          </div>
         </div>
 
         {/* Game-specific toggle settings injected here */}
@@ -85,7 +118,7 @@ export function PublishStep({
 
         <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
           <Button
-            disabled={!canPublish}
+            disabled={!canPublish || isPublishing}
             onClick={onPublish}
             className={cn(
               "flex-1 bg-white hover:bg-white/90 cursor-pointer font-semibold h-10 sm:h-11 rounded-xl gap-2 text-sm",
@@ -93,12 +126,12 @@ export function PublishStep({
             )}
           >
             <Gift className="w-4 h-4" />
-            Publish & get link
+            {isPublishing ? "Publishing..." : "Publish & get link"}
           </Button>
           <Button
             variant="outline"
             onClick={onPreview}
-            disabled={previewDisabled}
+            disabled={previewDisabled || isPublishing}
             className="h-10 bg-transparent cursor-pointer hover:text-white sm:h-11 rounded-xl border-white/30 text-white hover:bg-white/10 transition-transform duration-200 hover:scale-105 active:scale-95 w-full sm:w-auto"
           >
             <Eye className="w-4 h-4" />
@@ -109,6 +142,12 @@ export function PublishStep({
         {!canPublish && missingFields.length > 0 && (
           <p className="text-white/60 text-[11px] sm:text-xs mt-2.5 sm:mt-3 leading-snug">
             Please fill in: {missingFields.join(" • ")}
+          </p>
+        )}
+
+        {submitError && (
+          <p className="text-red-100 text-[11px] sm:text-xs mt-2.5 sm:mt-3 leading-snug">
+            {submitError}
           </p>
         )}
       </div>

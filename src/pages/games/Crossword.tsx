@@ -5,9 +5,13 @@ import {
   Grid3X3,
   AlertCircle,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { mapCrosswordContent, buildCreateGamePayload, buildPublishPayload, validateCreatePayload } from "@/lib/gameMappers";
+import { gamesService } from "@/services/games";
+import type { GameVisibility } from "@/types/games";
 import {
   GameTopBar,
   RecipientStep,
@@ -34,6 +38,7 @@ import {
 import type { CrosswordGrid, CrosswordWord } from "@/components/game/crossword";
 
 export default function Crossword() {
+  const navigate = useNavigate();
   const [step, setStep] = useState<number>(1);
   const [showPreview, setShowPreview] = useState<boolean>(false);
   const [recipient, setRecipient] = useState<Recipient>({
@@ -50,6 +55,10 @@ export default function Crossword() {
   const [isBuilding, setIsBuilding] = useState<boolean>(false);
   const [gameTitle, setGameTitle] = useState<string>("");
   const [showSolution, setShowSolution] = useState<boolean>(false);
+  const [visibility, setVisibility] = useState<Extract<GameVisibility, "private-link" | "public">>("private-link");
+  const [isPublishing, setIsPublishing] = useState<boolean>(false);
+  const [submitError, setSubmitError] = useState<string>("");
+  const [draftGameId, setDraftGameId] = useState<string | null>(null);
 
   const validWordCount = words.filter(
     (w) => w.word.trim().length >= 2 && w.clue.trim()
@@ -103,6 +112,62 @@ export default function Crossword() {
     !grid && "valid word arrangement",
   ].filter(Boolean) as string[];
 
+  const handlePublish = async (): Promise<void> => {
+    if (isPublishing || !canPublish) {
+      return;
+    }
+
+    setSubmitError("");
+    setIsPublishing(true);
+    let gameIdForPublish = draftGameId;
+
+    try {
+      if (!gameIdForPublish) {
+        const payload = buildCreateGamePayload(
+          "crossword",
+          {
+            title: gameTitle,
+            recipient,
+            personalMessage,
+          },
+          mapCrosswordContent({
+            recipient,
+            personalMessage,
+            words,
+            showSolution,
+          })
+        );
+
+        const validationErrors = validateCreatePayload(payload);
+        if (validationErrors.length > 0) {
+          setSubmitError(validationErrors[0]);
+          return;
+        }
+
+        const draft = await gamesService.createGame(payload);
+        gameIdForPublish = draft.gameId;
+        setDraftGameId(gameIdForPublish);
+      }
+
+      const published = await gamesService.publishGame(
+        gameIdForPublish,
+        buildPublishPayload(visibility)
+      );
+      navigate(`/games/${published.gameId}`);
+    } catch (error) {
+      const apiError = gamesService.mapError(error);
+      if (gameIdForPublish) {
+        setSubmitError(
+          `Draft was created, but publish failed. ${apiError.message} You can retry publishing.`
+        );
+      } else {
+        setSubmitError(apiError.message);
+      }
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-muted/30">
       {showPreview && grid && (
@@ -121,6 +186,8 @@ export default function Crossword() {
         previewDisabled={!grid}
         onPreview={() => setShowPreview(true)}
         canPublish={canPublish}
+        onPublish={handlePublish}
+        isPublishing={isPublishing}
         theme={CROSSWORD_THEME}
       />
 
@@ -364,9 +431,13 @@ export default function Crossword() {
               recipient={recipient}
               gameTitle={gameTitle}
               onGameTitleChange={setGameTitle}
+              visibility={visibility}
+              onVisibilityChange={setVisibility}
               canPublish={canPublish}
+              isPublishing={isPublishing}
+              submitError={submitError}
               missingFields={missingFields}
-              onPublish={() => {}}
+              onPublish={handlePublish}
               onPreview={() => setShowPreview(true)}
               previewDisabled={!grid}
               onBack={() => setStep(2)}

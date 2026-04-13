@@ -12,6 +12,8 @@ interface GameTopBarProps {
   previewDisabled?: boolean;
   onPreview: () => void;
   canPublish: boolean;
+  onPublish?: () => void;
+  isPublishing?: boolean;
   theme: GameTheme;
 }
 
@@ -22,6 +24,8 @@ export function GameTopBar({
   previewDisabled = false,
   onPreview,
   canPublish,
+  onPublish,
+  isPublishing = false,
   theme,
 }: GameTopBarProps) {
   const navigate = useNavigate();
@@ -80,15 +84,20 @@ export function GameTopBar({
           ) : (
             <Button
               size="sm"
-              disabled={!canPublish}
+              disabled={!canPublish || isPublishing}
+              onClick={onPublish}
               className={cn(
                 "h-8 sm:h-9 gap-1 sm:gap-1.5 bg-linear-to-r text-white border-0 text-xs sm:text-sm px-3 sm:px-4",
                 theme.topBarPublishGradient
               )}
             >
               <Gift className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              <span className="sm:hidden">Publish</span>
-              <span className="hidden sm:inline">Publish game</span>
+              <span className="sm:hidden">
+                {isPublishing ? "..." : "Publish"}
+              </span>
+              <span className="hidden sm:inline">
+                {isPublishing ? "Publishing..." : "Publish game"}
+              </span>
             </Button>
           )}
         </div>

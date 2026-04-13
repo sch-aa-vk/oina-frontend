@@ -213,7 +213,7 @@ function TrendingCard({ game }: { game: TrendingGame }) {
     <div className="group flex flex-col gap-2 sm:gap-3">
       {/* Visual tile */}
       <div
-        onClick={() => navigate(`/game/${game.id}`)}
+        onClick={() => navigate(`/games/${game.id}`)}
         className={cn(
           "relative h-28 sm:h-40 rounded-xl sm:rounded-2xl overflow-hidden cursor-pointer transition-all duration-300",
           "ring-1 ring-black/5 dark:ring-white/5",
@@ -251,7 +251,7 @@ function TrendingCard({ game }: { game: TrendingGame }) {
           <button
             onClick={(e) => {
               e.stopPropagation();
-              navigate(`/game/${game.id}`);
+              navigate(`/games/${game.id}`);
             }}
             className="flex items-center gap-2 bg-white text-gray-900 font-semibold text-sm px-4 py-2.5 rounded-full shadow-lg hover:scale-105 transition-transform"
             aria-label={`View ${game.name}`}

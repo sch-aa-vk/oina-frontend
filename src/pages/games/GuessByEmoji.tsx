@@ -1,8 +1,12 @@
 import { useState } from "react";
 import { Lightbulb } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { mapGuessByEmojiContent, buildCreateGamePayload, buildPublishPayload, validateCreatePayload } from "@/lib/gameMappers";
+import { gamesService } from "@/services/games";
+import type { GameVisibility } from "@/types/games";
 import {
   GameTopBar,
   RecipientStep,
@@ -24,6 +28,7 @@ import {
 import type { DifficultyLevel, EmojiPuzzle } from "@/components/game/guess-by-emoji";
 
 export default function GuessByEmoji() {
+  const navigate = useNavigate();
   const [step, setStep] = useState<number>(1);
   const [showPreview, setShowPreview] = useState<boolean>(false);
   const [recipient, setRecipient] = useState<Recipient>({
@@ -36,6 +41,10 @@ export default function GuessByEmoji() {
   ]);
   const [gameTitle, setGameTitle] = useState<string>("");
   const [showAnswers, setShowAnswers] = useState<boolean>(true);
+  const [visibility, setVisibility] = useState<Extract<GameVisibility, "private-link" | "public">>("private-link");
+  const [isPublishing, setIsPublishing] = useState<boolean>(false);
+  const [submitError, setSubmitError] = useState<string>("");
+  const [draftGameId, setDraftGameId] = useState<string | null>(null);
 
   const updatePuzzle = (id: string, changes: Partial<EmojiPuzzle>): void => {
     setPuzzles((prev) =>
@@ -63,6 +72,62 @@ export default function GuessByEmoji() {
     !completeness.title && "game title",
   ].filter(Boolean) as string[];
 
+  const handlePublish = async (): Promise<void> => {
+    if (isPublishing || !canPublish) {
+      return;
+    }
+
+    setSubmitError("");
+    setIsPublishing(true);
+    let gameIdForPublish = draftGameId;
+
+    try {
+      if (!gameIdForPublish) {
+        const payload = buildCreateGamePayload(
+          "guess-by-emoji",
+          {
+            title: gameTitle,
+            recipient,
+            personalMessage,
+          },
+          mapGuessByEmojiContent({
+            recipient,
+            personalMessage,
+            puzzles,
+            showAnswers,
+          })
+        );
+
+        const validationErrors = validateCreatePayload(payload);
+        if (validationErrors.length > 0) {
+          setSubmitError(validationErrors[0]);
+          return;
+        }
+
+        const draft = await gamesService.createGame(payload);
+        gameIdForPublish = draft.gameId;
+        setDraftGameId(gameIdForPublish);
+      }
+
+      const published = await gamesService.publishGame(
+        gameIdForPublish,
+        buildPublishPayload(visibility)
+      );
+      navigate(`/games/${published.gameId}`);
+    } catch (error) {
+      const apiError = gamesService.mapError(error);
+      if (gameIdForPublish) {
+        setSubmitError(
+          `Draft was created, but publish failed. ${apiError.message} You can retry publishing.`
+        );
+      } else {
+        setSubmitError(apiError.message);
+      }
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
   const completedPuzzles = puzzles.filter(
     (p) => p.emojis.length > 0 && p.answer.trim()
   ).length;
@@ -84,6 +149,8 @@ export default function GuessByEmoji() {
         stepLabels={STEP_LABELS}
         onPreview={() => setShowPreview(true)}
         canPublish={canPublish}
+        onPublish={handlePublish}
+        isPublishing={isPublishing}
         theme={GUESS_BY_EMOJI_THEME}
       />
 
@@ -249,9 +316,13 @@ export default function GuessByEmoji() {
               recipient={recipient}
               gameTitle={gameTitle}
               onGameTitleChange={setGameTitle}
+              visibility={visibility}
+              onVisibilityChange={setVisibility}
               canPublish={canPublish}
+              isPublishing={isPublishing}
+              submitError={submitError}
               missingFields={missingFields}
-              onPublish={() => {}}
+              onPublish={handlePublish}
               onPreview={() => setShowPreview(true)}
               onBack={() => setStep(2)}
               backLabel="← Back to puzzles"
