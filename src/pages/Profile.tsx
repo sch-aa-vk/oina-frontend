@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Camera,
@@ -9,6 +9,7 @@ import {
   Clock,
   Eye,
   Heart,
+  Loader2,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -16,17 +17,37 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { gamesService } from "@/services/games";
+import { usersService } from "@/services/users";
+import type { AvatarContentType } from "@/services/users";
 import type { GameResponse } from "@/types/games";
 
+const ALLOWED_AVATAR_TYPES: AvatarContentType[] = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+];
+
 export default function Profile() {
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const displayName = user?.displayName || user?.username || "";
-  const initials = displayName.slice(0, 2).toUpperCase() || user?.email?.slice(0, 2).toUpperCase() || "??";
+  const initials =
+    displayName.slice(0, 2).toUpperCase() ||
+    user?.email?.slice(0, 2).toUpperCase() ||
+    "??";
 
   const [isEditing, setIsEditing] = useState(false);
   const [tempName, setTempName] = useState(displayName);
   const [tempBio, setTempBio] = useState(user?.bio || "");
+  const [tempUsername, setTempUsername] = useState(user?.username || "");
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
+
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [avatarError, setAvatarError] = useState("");
+
   const [games, setGames] = useState<GameResponse[]>([]);
   const [nextCursor, setNextCursor] = useState<string | undefined>(undefined);
   const [gamesError, setGamesError] = useState<string>("");
@@ -36,15 +57,66 @@ export default function Profile() {
   const handleEdit = () => {
     setTempName(displayName);
     setTempBio(user?.bio || "");
+    setTempUsername(user?.username || "");
+    setSaveError("");
     setIsEditing(true);
   };
 
-  const handleSave = () => {
-    setIsEditing(false);
+  const handleSave = async () => {
+    setIsSaving(true);
+    setSaveError("");
+    try {
+      const updated = await usersService.updateMe({
+        displayName: tempName || undefined,
+        bio: tempBio || undefined,
+        username: tempUsername || undefined,
+      });
+      const newUser = { ...user!, ...updated };
+      setUser(newUser);
+      localStorage.setItem("user", JSON.stringify(newUser));
+      setIsEditing(false);
+    } catch (err) {
+      setSaveError(usersService.mapError(err).message);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleCancel = () => {
     setIsEditing(false);
+    setSaveError("");
+  };
+
+  const handleAvatarClick = () => {
+    if (!isUploadingAvatar) fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!ALLOWED_AVATAR_TYPES.includes(file.type as AvatarContentType)) {
+      setAvatarError("Only JPEG, PNG, WebP, and GIF images are allowed.");
+      e.target.value = "";
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+    setAvatarError("");
+    try {
+      const { presignedUrl, avatarUrl } = await usersService.uploadAvatar(
+        file.type as AvatarContentType
+      );
+      await usersService.putFileToS3(presignedUrl, file);
+      const newUser = { ...user!, avatarUrl };
+      setUser(newUser);
+      localStorage.setItem("user", JSON.stringify(newUser));
+    } catch (err) {
+      setAvatarError(usersService.mapError(err).message);
+    } finally {
+      setIsUploadingAvatar(false);
+      e.target.value = "";
+    }
   };
 
   const loadGames = async (cursor?: string) => {
@@ -71,8 +143,18 @@ export default function Profile() {
   };
 
   useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const fresh = await usersService.getMe();
+        setUser(fresh);
+        localStorage.setItem("user", JSON.stringify(fresh));
+      } catch {
+        // keep stale context data on error
+      }
+    };
+    loadProfile();
     loadGames();
-  }, []);
+  }, [setUser]);
 
   const gameTypeLabel: Record<GameResponse["type"], string> = {
     "choose-me": "Choose Me",
@@ -98,12 +180,27 @@ export default function Profile() {
         <div className="flex items-start gap-6">
           <div className="relative shrink-0">
             <Avatar className="size-24 ring-2 ring-border">
-              <AvatarImage src={user?.avatarUrl} />
+              <AvatarImage src={user?.avatarUrl || undefined} />
               <AvatarFallback className="text-2xl">{initials}</AvatarFallback>
             </Avatar>
-            <button className="absolute -bottom-1 -right-1 bg-primary text-primary-foreground rounded-full p-1.5 shadow hover:scale-110 transition-transform">
-              <Camera className="size-3" />
+            <button
+              onClick={handleAvatarClick}
+              disabled={isUploadingAvatar}
+              className="absolute -bottom-1 -right-1 bg-primary text-primary-foreground rounded-full p-1.5 shadow hover:scale-110 transition-transform disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {isUploadingAvatar ? (
+                <Loader2 className="size-3 animate-spin" />
+              ) : (
+                <Camera className="size-3" />
+              )}
             </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              className="hidden"
+              onChange={handleFileChange}
+            />
           </div>
 
           <div className="flex-1 flex flex-col gap-3">
@@ -113,7 +210,13 @@ export default function Profile() {
                   value={tempName}
                   onChange={(e) => setTempName(e.target.value)}
                   className="text-lg font-semibold h-9 max-w-xs"
-                  placeholder="Your name"
+                  placeholder="Display name"
+                />
+                <Input
+                  value={tempUsername}
+                  onChange={(e) => setTempUsername(e.target.value)}
+                  className="text-sm h-9 max-w-xs"
+                  placeholder="Username"
                 />
                 <Input
                   value={tempBio}
@@ -121,6 +224,9 @@ export default function Profile() {
                   className="text-sm h-9"
                   placeholder="Short bio"
                 />
+                {saveError && (
+                  <p className="text-sm text-destructive">{saveError}</p>
+                )}
               </>
             ) : (
               <>
@@ -133,6 +239,9 @@ export default function Profile() {
                 <p className="text-sm text-muted-foreground">
                   {user?.bio || "No bio yet."}
                 </p>
+                {avatarError && (
+                  <p className="text-sm text-destructive">{avatarError}</p>
+                )}
               </>
             )}
           </div>
@@ -140,10 +249,20 @@ export default function Profile() {
           <div className="flex gap-2 shrink-0">
             {isEditing ? (
               <>
-                <Button size="sm" onClick={handleSave}>
-                  <Check className="size-4 mr-1" /> Save
+                <Button size="sm" onClick={handleSave} disabled={isSaving}>
+                  {isSaving ? (
+                    <Loader2 className="size-4 mr-1 animate-spin" />
+                  ) : (
+                    <Check className="size-4 mr-1" />
+                  )}
+                  Save
                 </Button>
-                <Button size="sm" variant="outline" onClick={handleCancel}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleCancel}
+                  disabled={isSaving}
+                >
                   <X className="size-4 mr-1" /> Cancel
                 </Button>
               </>
@@ -161,7 +280,9 @@ export default function Profile() {
             <span className="text-xs text-muted-foreground">Games</span>
           </div>
           <div className="flex flex-col">
-            <span className="text-xl font-bold">{user?.gamesThisMonth ?? 0}</span>
+            <span className="text-xl font-bold">
+              {user?.gamesThisMonth ?? 0}
+            </span>
             <span className="text-xs text-muted-foreground">This Month</span>
           </div>
           <div className="flex flex-col">
@@ -199,14 +320,19 @@ export default function Profile() {
                 >
                   <div className="h-36 bg-linear-to-br from-primary/20 to-primary/5 relative p-4">
                     <p className="text-4xl">{gameEmoji[game.type]}</p>
-                    <Badge variant="secondary" className="absolute top-3 right-3 text-xs">
+                    <Badge
+                      variant="secondary"
+                      className="absolute top-3 right-3 text-xs"
+                    >
                       {visibilityLabel[game.visibility]}
                     </Badge>
                   </div>
 
                   <div className="p-3 flex flex-col gap-2">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="font-medium text-sm truncate">{game.title}</span>
+                      <span className="font-medium text-sm truncate">
+                        {game.title}
+                      </span>
                       <Badge variant="outline" className="text-[10px]">
                         {gameTypeLabel[game.type]}
                       </Badge>
