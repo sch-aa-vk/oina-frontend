@@ -43,6 +43,7 @@ interface GeminiResponse {
 export default function App() {
   const envApiKey = (import.meta.env.VITE_GEMINI_API_KEY || "").trim();
   const [view, setView] = useState<ViewValue>(VIEW.FORM);
+  const [editorTab, setEditorTab] = useState<"design" | "preview">("design");
   const [recipientName, setRecipientName] = useState("");
   const [occasion, setOccasion] = useState<string>("Birthday");
   const [personalMessage, setPersonalMessage] = useState("");
@@ -54,7 +55,7 @@ export default function App() {
   const [apiKey, setApiKey] = useState("");
   const [showSettings] = useState(false);
 
-  const [generatedHtml, setGeneratedHtml] = useState("");
+  const [generatedHtml, setGeneratedHtml] = useState(""); 
   const [publishedLink, setPublishedLink] = useState("");
   const [myGifts, setMyGifts] = useState<GiftRecord[]>([]);
 
@@ -273,7 +274,8 @@ export default function App() {
         occasion,
       );
       setGeneratedHtml(personalizedHtml);
-      setView(VIEW.PREVIEW);
+      setEditorTab("preview");
+      setView(VIEW.FORM);
     } catch (error) {
       setErrorMessage(
         error instanceof Error
@@ -342,6 +344,43 @@ export default function App() {
       <div className="relative z-10 mx-auto w-full max-w-6xl pb-8">
         <TopBar />
 
+        {view === VIEW.FORM && (
+          <div className="mb-4 rounded-2xl border bg-card/90 p-1.5 shadow-sm backdrop-blur">
+            <div
+              className="grid grid-cols-2 gap-1"
+              role="tablist"
+              aria-label="Gift generator sections"
+            >
+              <button
+                type="button"
+                role="tab"
+                aria-selected={editorTab === "design"}
+                className={
+                  editorTab === "design"
+                    ? "rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground shadow-sm"
+                    : "rounded-xl px-4 py-3 text-sm font-semibold text-muted-foreground transition-colors hover:bg-muted/70"
+                }
+                onClick={() => setEditorTab("design")}
+              >
+                Design
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={editorTab === "preview"}
+                className={
+                  editorTab === "preview"
+                    ? "rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground shadow-sm"
+                    : "rounded-xl px-4 py-3 text-sm font-semibold text-muted-foreground transition-colors hover:bg-muted/70"
+                }
+                onClick={() => setEditorTab("preview")}
+              >
+                Live Preview
+              </button>
+            </div>
+          </div>
+        )}
+
         {showSettings && (
           <SettingsPanel
             uiClasses={UI_CLASSES}
@@ -351,7 +390,7 @@ export default function App() {
           />
         )}
 
-        {view === VIEW.FORM && (
+        {view === VIEW.FORM && editorTab === "design" && (
           <FormView
             uiClasses={UI_CLASSES}
             recipientName={recipientName}
@@ -383,7 +422,7 @@ export default function App() {
           />
         )}
 
-        {view === VIEW.PREVIEW && (
+        {view === VIEW.FORM && editorTab === "preview" && (
           <PreviewView
             uiClasses={UI_CLASSES}
             previewMode={previewMode}
@@ -394,6 +433,8 @@ export default function App() {
             isLoading={isLoading}
             setView={setView}
             formView={VIEW.FORM}
+            setEditorTab={setEditorTab}
+            hasGeneratedHtml={Boolean(generatedHtml.trim())}
             errorMessage={errorMessage}
           />
         )}
@@ -407,6 +448,7 @@ export default function App() {
             copyLink={copyLink}
             setView={setView}
             formView={VIEW.FORM}
+            setEditorTab={setEditorTab}
             myGifts={myGifts}
             errorMessage={errorMessage}
           />

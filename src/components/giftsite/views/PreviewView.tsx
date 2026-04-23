@@ -11,6 +11,8 @@ interface PreviewViewProps {
   isLoading: boolean;
   setView: Dispatch<SetStateAction<ViewValue>>;
   formView: ViewValue;
+  setEditorTab: Dispatch<SetStateAction<"design" | "preview">>;
+  hasGeneratedHtml: boolean;
   errorMessage: string;
 }
 
@@ -24,6 +26,8 @@ export default function PreviewView({
   isLoading,
   setView,
   formView,
+  setEditorTab,
+  hasGeneratedHtml,
   errorMessage,
 }: PreviewViewProps) {
   const isPhonePreview = previewMode === "phone";
@@ -77,43 +81,72 @@ export default function PreviewView({
           </div>
         </div>
 
-        <div className="overflow-hidden rounded-lg border bg-background">
-          <div
-            className="flex items-center gap-2 border-b bg-muted/35 px-3 py-2.5"
-            aria-hidden="true"
-          >
-            <span className="h-2.5 w-2.5 rounded-full bg-muted-foreground/45" />
-            <span className="h-2.5 w-2.5 rounded-full bg-muted-foreground/45" />
-            <span className="h-2.5 w-2.5 rounded-full bg-muted-foreground/45" />
-          </div>
+        {hasGeneratedHtml ? (
+          <div className="overflow-hidden rounded-lg border bg-background">
+            <div
+              className="flex items-center gap-2 border-b bg-muted/35 px-3 py-2.5"
+              aria-hidden="true"
+            >
+              <span className="h-2.5 w-2.5 rounded-full bg-muted-foreground/45" />
+              <span className="h-2.5 w-2.5 rounded-full bg-muted-foreground/45" />
+              <span className="h-2.5 w-2.5 rounded-full bg-muted-foreground/45" />
+            </div>
 
-          <div
-            className={
-              isPhonePreview
-                ? "mx-auto mt-3 h-[min(76vh,760px)] w-full max-w-97.5 overflow-auto rounded-[34px] border-[6px] border-border bg-muted p-2 shadow-sm"
-                : "mt-3 min-h-105 overflow-hidden rounded-xl border bg-background md:min-h-[68vh]"
-            }
-          >
-            <iframe
-              title="Gift preview"
+            <div
               className={
                 isPhonePreview
-                  ? "block origin-top-left rounded-3xl border bg-background"
-                  : "block min-h-105 w-full border-0 bg-background md:min-h-[68vh]"
+                  ? "mx-auto mt-3 h-[min(76vh,760px)] w-full max-w-97.5 overflow-auto rounded-[34px] border-[6px] border-border bg-muted p-2 shadow-sm"
+                  : "mt-3 min-h-105 overflow-hidden rounded-xl border bg-background md:min-h-[68vh]"
               }
-              style={
-                isPhonePreview
-                  ? {
-                      transform: `scale(${phoneScale})`,
-                      width: `${100 / phoneScale}%`,
-                      height: `${100 / phoneScale}%`,
-                    }
-                  : undefined
-              }
-              srcDoc={generatedHtml}
-            />
+            >
+              <iframe
+                title="Gift preview"
+                className={
+                  isPhonePreview
+                    ? "block origin-top-left rounded-3xl border bg-background"
+                    : "block min-h-105 w-full border-0 bg-background md:min-h-[68vh]"
+                }
+                style={
+                  isPhonePreview
+                    ? {
+                        transform: `scale(${phoneScale})`,
+                        width: `${100 / phoneScale}%`,
+                        height: `${100 / phoneScale}%`,
+                      }
+                    : undefined
+                }
+                srcDoc={generatedHtml}
+              />
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="rounded-lg border border-dashed bg-muted/30 px-4 py-10 text-center">
+            <h3 className="text-lg font-semibold tracking-tight">
+              No live preview yet
+            </h3>
+            <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
+              Go to Design, fill in the details, and generate a gift to see the
+              preview here.
+            </p>
+            <div className="mt-4 flex flex-wrap justify-center gap-2.5">
+              <button
+                className={uiClasses.btnPrimary}
+                type="button"
+                onClick={() => setEditorTab("design")}
+              >
+                Back to Design
+              </button>
+              <button
+                className={uiClasses.btnGhost}
+                type="button"
+                onClick={generateGiftSite}
+                disabled={isLoading}
+              >
+                {isLoading ? "Generating..." : "Generate Gift"}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2.5">
@@ -121,6 +154,7 @@ export default function PreviewView({
           className={uiClasses.btnPrimary}
           type="button"
           onClick={publishGiftSite}
+          disabled={!hasGeneratedHtml}
         >
           Publish & Get Link
         </button>
@@ -135,7 +169,10 @@ export default function PreviewView({
         <button
           className={uiClasses.btnGhost}
           type="button"
-          onClick={() => setView(formView)}
+          onClick={() => {
+            setEditorTab("design");
+            setView(formView);
+          }}
         >
           Edit
         </button>

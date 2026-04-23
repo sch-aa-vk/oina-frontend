@@ -14,6 +14,7 @@ interface PublishedViewProps {
   copyLink: () => void;
   setView: Dispatch<SetStateAction<ViewValue>>;
   formView: ViewValue;
+  setEditorTab: Dispatch<SetStateAction<"design" | "preview">>;
   myGifts: GiftRecord[];
   errorMessage: string;
 }
@@ -26,6 +27,7 @@ export default function PublishedView({
   copyLink,
   setView,
   formView,
+  setEditorTab,
   myGifts,
   errorMessage,
 }: PublishedViewProps) {
@@ -76,7 +78,10 @@ export default function PublishedView({
         <button
           className={uiClasses.btnGhost}
           type="button"
-          onClick={() => setView(formView)}
+          onClick={() => {
+            setEditorTab("design");
+            setView(formView);
+          }}
         >
           Create Another Gift
         </button>
