@@ -5,6 +5,7 @@ import MainLayout from "@/layouts/MainLayout";
 import AuthLayout from "@/layouts/AuthLayout";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import GuestRoute from "@/components/GuestRoute";
+import GiftGenerator from "@/pages/GiftGenerator";
 
 const Home = lazy(() => import("@/pages/Home"));
 const Profile = lazy(() => import("@/pages/Profile"));
@@ -38,6 +39,7 @@ export default function App() {
                 />
                 <Route path="/create/crossword" element={<Crossword />} />
                 <Route path="/games/:gameId" element={<GameDetails />} />
+                <Route path="/gift-generator" element={<GiftGenerator />} />
               </Route>
             </Route>
 

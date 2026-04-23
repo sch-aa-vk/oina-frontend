@@ -1,12 +1,12 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import {
   Folder,
   Forward,
   MoreHorizontal,
   Trash2,
   User2Icon,
-  type LucideIcon,
 } from "lucide-react";
 
 import {
@@ -27,20 +27,55 @@ import {
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
+import { gamesService } from "@/services/games";
+import type { GameResponse } from "@/types/games";
 import { useNavigate } from "react-router-dom";
 
-export function NavProjects({
-  projects,
-}: {
-  projects: {
-    name: string;
-    url: string;
-    icon: LucideIcon;
-  }[];
-}) {
+export function NavProjects() {
   const { isMobile } = useSidebar();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [games, setGames] = useState<GameResponse[]>([]);
+  const [isLoadingGames, setIsLoadingGames] = useState(false);
+  const [gamesError, setGamesError] = useState("");
+
+  useEffect(() => {
+    let isMounted = true;
+
+    if (!user) {
+      setGames([]);
+      setGamesError("");
+      setIsLoadingGames(false);
+      return;
+    }
+
+    const loadGames = async () => {
+      setIsLoadingGames(true);
+
+      try {
+        setGamesError("");
+        const response = await gamesService.listGames();
+        if (isMounted) {
+          setGames(response.games);
+        }
+      } catch (error) {
+        const parsed = gamesService.mapError(error);
+        if (isMounted) {
+          setGamesError(parsed.message);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingGames(false);
+        }
+      }
+    };
+
+    loadGames();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user]);
 
   if (!user) {
     return (
@@ -72,14 +107,33 @@ export function NavProjects({
     <SidebarGroup className="group-data-[collapsible=icon]:hidden">
       <SidebarGroupLabel>History</SidebarGroupLabel>
       <SidebarMenu>
-        {projects.map((item) => (
+        {isLoadingGames ? (
+          <SidebarMenuItem>
+            <SidebarMenuButton disabled>
+              <span>Loading games...</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        ) : gamesError ? (
+          <SidebarMenuItem>
+            <SidebarMenuButton disabled>
+              <span>Unable to load games</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        ) : games.length === 0 ? (
+          <SidebarMenuItem>
+            <SidebarMenuButton disabled>
+              <span>No games yet</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        ) : (
+          games.map((game) => (
           <SidebarMenuItem
-            key={item.name}
+            key={game.gameId}
             className="hover:bg-neutral-200 rounded-lg cursor-pointer"
           >
             <SidebarMenuButton asChild className="hover:bg-neutral-200">
-              <a href={item.url}>
-                <span>{item.name}</span>
+              <a href={`/games/${game.gameId}`}>
+                <span className="truncate">{game.title}</span>
               </a>
             </SidebarMenuButton>
             <DropdownMenu>
@@ -110,7 +164,8 @@ export function NavProjects({
               </DropdownMenuContent>
             </DropdownMenu>
           </SidebarMenuItem>
-        ))}
+          ))
+        )}
       </SidebarMenu>
     </SidebarGroup>
   );
