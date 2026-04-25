@@ -1,12 +1,13 @@
 "use client";
 
+import { NavLink } from "react-router-dom";
 import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarTrigger,
-  useSidebar,
 } from "@/components/ui/sidebar";
+import { useSidebar } from "@/hooks/use-sidebar";
 
 export function ProjectLogo() {
   const { state } = useSidebar();
@@ -17,7 +18,7 @@ export function ProjectLogo() {
       <SidebarMenuItem>
         <div className="group/logo flex items-center">
           <SidebarMenuButton size="lg" asChild>
-            <a href="/">
+            <NavLink to="/">
               {isCollapsed ? (
                 <img
                   src="/logoshape.svg"
@@ -27,7 +28,7 @@ export function ProjectLogo() {
               ) : (
                 <img src="/logo.svg" alt="Logo" className="h-5 w-auto" />
               )}
-            </a>
+            </NavLink>
           </SidebarMenuButton>
           {isCollapsed ? (
             <SidebarTrigger className="absolute opacity-0 group-hover/logo:opacity-100 transition-opacity hover:bg-neutral-200" />

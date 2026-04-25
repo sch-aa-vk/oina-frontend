@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Camera,
   Pencil,
@@ -10,11 +10,20 @@ import {
   Eye,
   Heart,
   Loader2,
+  LogOut,
+  Settings,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
 import { gamesService } from "@/services/games";
 import { usersService } from "@/services/users";
@@ -29,7 +38,8 @@ const ALLOWED_AVATAR_TYPES: AvatarContentType[] = [
 ];
 
 export default function Profile() {
-  const { user, setUser } = useAuth();
+  const { user, setUser, logout } = useAuth();
+  const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const displayName = user?.displayName || user?.username || "";
@@ -53,6 +63,11 @@ export default function Profile() {
   const [gamesError, setGamesError] = useState<string>("");
   const [isLoadingGames, setIsLoadingGames] = useState<boolean>(true);
   const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
+
+  async function handleLogout() {
+    await logout();
+    navigate("/login");
+  }
 
   const handleEdit = () => {
     setTempName(displayName);
@@ -267,9 +282,22 @@ export default function Profile() {
                 </Button>
               </>
             ) : (
-              <Button size="sm" variant="outline" onClick={handleEdit}>
-                <Pencil className="size-4 mr-1" /> Edit
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="sm" variant="outline">
+                    <Settings className="size-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-40">
+                  <DropdownMenuItem onClick={handleEdit} className="cursor-pointer">
+                    <Pencil className="size-4 mr-2" /> Edit profile
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive focus:text-destructive">
+                    <LogOut className="size-4 mr-2" /> Log out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
           </div>
         </div>

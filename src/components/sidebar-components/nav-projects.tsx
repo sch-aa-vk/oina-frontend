@@ -4,9 +4,13 @@ import { useEffect, useState } from "react";
 import {
   Folder,
   Forward,
+  Gift,
+  Grid3x3,
   MoreHorizontal,
+  Smile,
   Trash2,
   User2Icon,
+  Users,
 } from "lucide-react";
 
 import {
@@ -23,13 +27,13 @@ import {
   SidebarMenuAction,
   SidebarMenuButton,
   SidebarMenuItem,
-  useSidebar,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { gamesService } from "@/services/games";
 import type { GameResponse } from "@/types/games";
-import { useNavigate } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
+import { useSidebar } from "@/hooks/use-sidebar";
 
 export function NavProjects() {
   const { isMobile } = useSidebar();
@@ -103,9 +107,32 @@ export function NavProjects() {
     );
   }
 
+  const quickLinks = [
+    { label: "Choose Me", href: "/create/choose-me", icon: Users },
+    { label: "Guess by Emoji", href: "/create/guess-by-emoji", icon: Smile },
+    { label: "Crossword", href: "/create/crossword", icon: Grid3x3 },
+    { label: "Gift Website", href: "/gift-generator", icon: Gift },
+  ];
+
   return (
-    <SidebarGroup className="group-data-[collapsible=icon]:hidden">
-      <SidebarGroupLabel>History</SidebarGroupLabel>
+    <>
+      <SidebarGroup className="group-data-[collapsible=icon]:hidden">
+        <SidebarGroupLabel>Create</SidebarGroupLabel>
+        <SidebarMenu>
+          {quickLinks.map(({ label, href, icon: Icon }) => (
+            <SidebarMenuItem key={href}>
+              <SidebarMenuButton asChild className="hover:bg-neutral-200">
+                <NavLink to={href}>
+                  <Icon className="w-4 h-4" />
+                  <span>{label}</span>
+                </NavLink>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          ))}
+        </SidebarMenu>
+      </SidebarGroup>
+      <SidebarGroup className="group-data-[collapsible=icon]:hidden">
+        <SidebarGroupLabel>History</SidebarGroupLabel>
       <SidebarMenu>
         {isLoadingGames ? (
           <SidebarMenuItem>
@@ -132,9 +159,9 @@ export function NavProjects() {
             className="hover:bg-neutral-200 rounded-lg cursor-pointer"
           >
             <SidebarMenuButton asChild className="hover:bg-neutral-200">
-              <a href={`/games/${game.gameId}`}>
+              <NavLink to={`/games/${game.gameId}`}>
                 <span className="truncate">{game.title}</span>
-              </a>
+              </NavLink>
             </SidebarMenuButton>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -168,5 +195,6 @@ export function NavProjects() {
         )}
       </SidebarMenu>
     </SidebarGroup>
+    </>
   );
 }
