@@ -1,12 +1,10 @@
 import { useEffect, useMemo, useState, type ChangeEvent } from "react";
 import SparkleField from "../components/giftsite/SparkleField";
 import TopBar from "../components/giftsite/TopBar";
-import SettingsPanel from "../components/giftsite/SettingsPanel";
 import FormView from "../components/giftsite/views/FormView";
 import PreviewView from "../components/giftsite/views/PreviewView";
 import PublishedView from "../components/giftsite/views/PublishedView";
 import {
-  GEMINI_ENDPOINT,
   MAX_UPLOADED_IMAGES,
   THEMES,
   TEMPLATES,
@@ -17,31 +15,13 @@ import {
 import { UI_CLASSES } from "../components/giftsite/constants/uiClasses";
 import type { GiftRecord, UploadedImage, ViewValue } from "../types/giftSite";
 import {
-  buildGiftPrompt,
   compressImageFile,
-  ensureAdaptiveHtml,
   getStorageApi,
-  injectUploadedImages,
-  normalizeGeneratedHtml,
-  randomGiftId,
   readAllGiftRecords,
 } from "../utils/giftSiteUtil";
-
-interface GeminiResponse {
-  candidates?: Array<{
-    content?: {
-      parts?: Array<{
-        text?: string;
-      }>;
-    };
-  }>;
-  error?: {
-    message?: string;
-  };
-}
+import { giftSiteService } from "../services/giftSite";
 
 export default function App() {
-  const envApiKey = (import.meta.env.VITE_GEMINI_API_KEY || "").trim();
   const [view, setView] = useState<ViewValue>(VIEW.FORM);
   const [editorTab, setEditorTab] = useState<"design" | "preview">("design");
   const [recipientName, setRecipientName] = useState("");
@@ -52,10 +32,8 @@ export default function App() {
   const [templateId, setTemplateId] = useState(TEMPLATES[0].id);
   const [variationId, setVariationId] = useState(VALENTINE_VARIATIONS[0].id);
   const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([]);
-  const [apiKey, setApiKey] = useState("");
-  const [showSettings] = useState(false);
 
-  const [generatedHtml, setGeneratedHtml] = useState(""); 
+  const [generatedGiftId, setGeneratedGiftId] = useState("");
   const [publishedLink, setPublishedLink] = useState("");
   const [myGifts, setMyGifts] = useState<GiftRecord[]>([]);
 
@@ -67,7 +45,6 @@ export default function App() {
   );
   const [isImageProcessing, setIsImageProcessing] = useState(false);
 
-  const activeApiKey = apiKey.trim() || envApiKey;
   const isValentineOccasion = occasion === "Valentine's Day";
 
   const selectedVariation =
@@ -189,13 +166,6 @@ export default function App() {
     setErrorMessage("");
     setCopied(false);
 
-    if (!activeApiKey) {
-      setErrorMessage(
-        "Please set VITE_GEMINI_API_KEY in .env (or add a key in settings) before generating.",
-      );
-      return;
-    }
-
     if (!recipientName.trim() || !personalMessage.trim()) {
       setErrorMessage(
         "Please fill in the recipient name and personal message first.",
@@ -209,16 +179,15 @@ export default function App() {
     }
 
     setIsLoading(true);
-
     try {
-      const prompt = buildGiftPrompt({
+      const result = await giftSiteService.generateGift({
         recipientName: recipientName.trim(),
         occasion,
         personalMessage: personalMessage.trim(),
         tone,
         themeName,
         themeDirection:
-          THEMES.find((theme) => theme.name === themeName)?.direction ||
+          THEMES.find((t) => t.name === themeName)?.direction ||
           THEMES[0].direction,
         templateLabel: selectedTemplate.label,
         templateBlueprint: selectedTemplate.blueprint,
@@ -227,53 +196,7 @@ export default function App() {
         variationDescription: selectedVariation.description,
       });
 
-      const response = await fetch(
-        `${GEMINI_ENDPOINT}?key=${encodeURIComponent(activeApiKey)}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            contents: [
-              {
-                role: "user",
-                parts: [{ text: prompt }],
-              },
-            ],
-            generationConfig: {
-              temperature: 1.0,
-              maxOutputTokens: 8192,
-            },
-          }),
-        },
-      );
-
-      const data = (await response.json()) as GeminiResponse;
-
-      if (!response.ok) {
-        const apiError =
-          data?.error?.message ||
-          "Gemini request failed. Please verify your API key and try again.";
-        throw new Error(apiError);
-      }
-
-      const htmlText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (!htmlText || typeof htmlText !== "string") {
-        throw new Error(
-          "Gemini returned an unexpected response. Please try regenerating.",
-        );
-      }
-
-      const normalizedHtml = normalizeGeneratedHtml(htmlText);
-      const adaptiveHtml = ensureAdaptiveHtml(normalizedHtml);
-      const personalizedHtml = injectUploadedImages(
-        adaptiveHtml,
-        uploadedImages,
-        recipientName.trim(),
-        occasion,
-      );
-      setGeneratedHtml(personalizedHtml);
+      setGeneratedGiftId(result.giftId);
       setEditorTab("preview");
       setView(VIEW.FORM);
     } catch (error) {
@@ -288,37 +211,34 @@ export default function App() {
   };
 
   const publishGiftSite = () => {
-    if (!generatedHtml) {
+    if (!generatedGiftId) {
       setErrorMessage("Generate a gift site before publishing.");
       return;
     }
 
-    const id = randomGiftId();
+    const appUrl = (
+      import.meta.env.VITE_APP_URL || window.location.origin
+    ).replace(/\/$/, "");
+    const link = `${appUrl}/gift/${generatedGiftId}`;
+
     const record: GiftRecord = {
-      id,
-      html: generatedHtml,
+      id: generatedGiftId,
       recipientName: recipientName.trim(),
       occasion,
       createdAt: new Date().toISOString(),
     };
 
     if (storageApi) {
-      try {
-        const key = `gift:${id}`;
-        const value = JSON.stringify(record);
-        if (typeof storageApi.setItem === "function") {
-          storageApi.setItem(key, value);
-        } else {
-          storageApi[key] = value;
-        }
-      } catch {
-        setErrorMessage(
-          "Gift was generated, but saving to storage failed in this browser.",
-        );
+      const key = `gift:${generatedGiftId}`;
+      const value = JSON.stringify(record);
+      if (typeof storageApi.setItem === "function") {
+        storageApi.setItem(key, value);
+      } else {
+        storageApi[key] = value;
       }
     }
 
-    setPublishedLink(`https://giftsite.ai/g/${id}`);
+    setPublishedLink(link);
     setMyGifts(readAllGiftRecords(storageApi));
     setView(VIEW.PUBLISHED);
   };
@@ -381,15 +301,6 @@ export default function App() {
           </div>
         )}
 
-        {showSettings && (
-          <SettingsPanel
-            uiClasses={UI_CLASSES}
-            apiKey={apiKey}
-            envApiKey={envApiKey}
-            onApiKeyChange={setApiKey}
-          />
-        )}
-
         {view === VIEW.FORM && editorTab === "design" && (
           <FormView
             uiClasses={UI_CLASSES}
@@ -427,14 +338,13 @@ export default function App() {
             uiClasses={UI_CLASSES}
             previewMode={previewMode}
             setPreviewMode={setPreviewMode}
-            generatedHtml={generatedHtml}
+            giftId={generatedGiftId}
             publishGiftSite={publishGiftSite}
             generateGiftSite={generateGiftSite}
             isLoading={isLoading}
             setView={setView}
             formView={VIEW.FORM}
             setEditorTab={setEditorTab}
-            hasGeneratedHtml={Boolean(generatedHtml.trim())}
             errorMessage={errorMessage}
           />
         )}

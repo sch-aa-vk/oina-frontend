@@ -27,7 +27,6 @@ export interface UploadedImage {
 
 export interface GiftRecord {
   id: string;
-  html: string;
   recipientName: string;
   occasion: string;
   createdAt: string;

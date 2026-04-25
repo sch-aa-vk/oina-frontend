@@ -59,6 +59,17 @@ const templateGames: TemplateGame[] = [
     accentBg: "bg-emerald-50 dark:bg-emerald-950/30",
     tag: "Thoughtful",
   },
+  {
+    id: 4,
+    name: "Gift Page",
+    emoji: "🎁",
+    description:
+      "Generate a beautiful personalised gift site and share it with a single link",
+    route: "/gift-generator",
+    gradient: "from-rose-400 via-pink-400 to-fuchsia-500",
+    accentBg: "bg-rose-50 dark:bg-rose-950/30",
+    tag: "New",
+  },
 ];
 
 const trendingGames: TrendingGame[] = [

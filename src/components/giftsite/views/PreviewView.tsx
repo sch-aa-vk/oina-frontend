@@ -1,18 +1,37 @@
-import type { Dispatch, SetStateAction } from "react";
+import { useEffect, useReducer, type Dispatch, type SetStateAction } from "react";
 import type { UiClasses, ViewValue } from "../../../types/giftSite";
+import { giftSiteService } from "@/services/giftSite";
+
+type FetchState =
+  | { status: "idle" }
+  | { status: "loading" }
+  | { status: "done"; html: string }
+  | { status: "error" };
+
+type FetchAction =
+  | { type: "fetch" }
+  | { type: "success"; html: string }
+  | { type: "failure" };
+
+function fetchReducer(_state: FetchState, action: FetchAction): FetchState {
+  switch (action.type) {
+    case "fetch":   return { status: "loading" };
+    case "success": return { status: "done", html: action.html };
+    case "failure": return { status: "error" };
+  }
+}
 
 interface PreviewViewProps {
   uiClasses: UiClasses;
   previewMode: "desktop" | "phone";
   setPreviewMode: Dispatch<SetStateAction<"desktop" | "phone">>;
-  generatedHtml: string;
+  giftId: string;
   publishGiftSite: () => void;
   generateGiftSite: () => void;
   isLoading: boolean;
   setView: Dispatch<SetStateAction<ViewValue>>;
   formView: ViewValue;
   setEditorTab: Dispatch<SetStateAction<"design" | "preview">>;
-  hasGeneratedHtml: boolean;
   errorMessage: string;
 }
 
@@ -20,16 +39,51 @@ export default function PreviewView({
   uiClasses,
   previewMode,
   setPreviewMode,
-  generatedHtml,
+  giftId,
   publishGiftSite,
   generateGiftSite,
   isLoading,
   setView,
   formView,
   setEditorTab,
-  hasGeneratedHtml,
   errorMessage,
 }: PreviewViewProps) {
+  const [fetchState, dispatch] = useReducer(fetchReducer, { status: "idle" });
+
+  useEffect(() => {
+    if (!giftId) return;
+    dispatch({ type: "fetch" });
+
+    let cancelled = false;
+    const MAX_ATTEMPTS = 60;
+    let attempts = 0;
+
+    const check = async () => {
+      try {
+        const res = await giftSiteService.getGift(giftId);
+        if (cancelled) return;
+        if (res.status === "READY" && res.html) {
+          dispatch({ type: "success", html: res.html });
+        } else if (res.status === "ERROR" || ++attempts >= MAX_ATTEMPTS) {
+          dispatch({ type: "failure" });
+        } else {
+          setTimeout(check, 3000);
+        }
+      } catch {
+        if (!cancelled) dispatch({ type: "failure" });
+      }
+    };
+
+    check();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [giftId]);
+
+  const isFetching = fetchState.status === "loading";
+  const html = fetchState.status === "done" ? fetchState.html : "";
+  const hasGeneratedHtml = fetchState.status === "done" && Boolean(fetchState.html);
   const isPhonePreview = previewMode === "phone";
   const phoneScale = 0.82;
 
@@ -81,7 +135,15 @@ export default function PreviewView({
           </div>
         </div>
 
-        {hasGeneratedHtml ? (
+        {isFetching ? (
+          <div className="rounded-lg border border-dashed bg-muted/30 px-4 py-10 text-center">
+            <span
+              className="mx-auto mb-3 block h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground"
+              aria-hidden="true"
+            />
+            <p className="text-sm text-muted-foreground">Generating your gift site — this takes up to a minute...</p>
+          </div>
+        ) : hasGeneratedHtml ? (
           <div className="overflow-hidden rounded-lg border bg-background">
             <div
               className="flex items-center gap-2 border-b bg-muted/35 px-3 py-2.5"
@@ -115,7 +177,8 @@ export default function PreviewView({
                       }
                     : undefined
                 }
-                srcDoc={generatedHtml}
+                srcDoc={html}
+                sandbox="allow-scripts allow-same-origin"
               />
             </div>
           </div>

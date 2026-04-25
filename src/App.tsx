@@ -8,6 +8,7 @@ import GuestRoute from "@/components/GuestRoute";
 import GiftGenerator from "@/pages/GiftGenerator";
 
 const Home = lazy(() => import("@/pages/Home"));
+const GiftViewer = lazy(() => import("@/pages/GiftViewer"));
 const Profile = lazy(() => import("@/pages/Profile"));
 const Login = lazy(() => import("@/pages/auth/Login"));
 const Register = lazy(() => import("@/pages/auth/Register"));
@@ -52,6 +53,8 @@ export default function App() {
                 <Route path="/reset-password" element={<ResetPassword />} />
               </Route>
             </Route>
+
+            <Route path="/gift/:giftId" element={<GiftViewer />} />
           </Routes>
         </Suspense>
       </AuthProvider>
