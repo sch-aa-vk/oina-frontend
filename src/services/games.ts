@@ -101,6 +101,7 @@ export const gamesService = {
     sortBy?: SortBy;
     category?: string;
     type?: GameType;
+    search?: string;
     cursor?: string;
   }): Promise<PublicGamesListResponse> {
     const response = await api.get<PublicGamesListResponse>("/games/public", { params });

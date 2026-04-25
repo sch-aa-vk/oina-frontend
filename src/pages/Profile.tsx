@@ -57,7 +57,6 @@ export default function Profile() {
   const [isEditing, setIsEditing] = useState(false);
   const [tempName, setTempName] = useState(displayName);
   const [tempBio, setTempBio] = useState(user?.bio || "");
-  const [tempUsername, setTempUsername] = useState(user?.username || "");
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
 
@@ -100,7 +99,6 @@ export default function Profile() {
   const handleEdit = () => {
     setTempName(displayName);
     setTempBio(user?.bio || "");
-    setTempUsername(user?.username || "");
     setSaveError("");
     setIsEditing(true);
   };
@@ -112,7 +110,6 @@ export default function Profile() {
       const updated = await usersService.updateMe({
         displayName: tempName || undefined,
         bio: tempBio || undefined,
-        username: tempUsername || undefined,
       });
       const newUser = { ...user!, ...updated };
       appCache.set("me", newUser);
@@ -265,7 +262,7 @@ export default function Profile() {
     loadProfile();
     loadGames();
     loadGifts();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setUser]);
 
   const gameTypeLabel: Record<GameResponse["type"], string> = {
@@ -289,8 +286,8 @@ export default function Profile() {
   return (
     <div className="flex flex-col gap-6 w-full">
       <div className="rounded-xl border bg-card p-6">
-        <div className="flex items-start gap-6">
-          <div className="relative shrink-0">
+        <div className="flex flex-wrap items-start gap-4 sm:gap-6">
+          <div className="relative shrink-0 order-1">
             <Avatar className="size-24 ring-2 ring-border">
               <AvatarImage src={user?.avatarUrl || undefined} />
               <AvatarFallback className="text-2xl">{initials}</AvatarFallback>
@@ -315,25 +312,22 @@ export default function Profile() {
             />
           </div>
 
-          <div className="flex-1 flex flex-col gap-3">
+          <div className="order-3 basis-full sm:order-2 sm:basis-auto sm:flex-1 flex flex-col gap-3">
             {isEditing ? (
               <>
-                <Input
-                  value={tempName}
-                  onChange={(e) => setTempName(e.target.value)}
-                  className="text-lg font-semibold h-9 max-w-xs"
-                  placeholder="Display name"
-                />
-                <Input
-                  value={tempUsername}
-                  onChange={(e) => setTempUsername(e.target.value)}
-                  className="text-sm h-9 max-w-xs"
-                  placeholder="Username"
-                />
+                <div className="flex flex-col">
+                  <Input
+                    value={tempName}
+                    onChange={(e) => setTempName(e.target.value)}
+                    className="max-w-xs text-xl md:text-xl font-semibold h-auto border-t-0 border-r-0 border-l-0 rounded-none bg-transparent shadow-none px-0 py-0 focus:bg-transparent focus-visible:ring-0"
+                    placeholder="Display name"
+                  />
+                  <p className="text-sm text-muted-foreground">{user?.email}</p>
+                </div>
                 <Input
                   value={tempBio}
                   onChange={(e) => setTempBio(e.target.value)}
-                  className="text-sm h-9"
+                  className="w-full text-sm md:text-sm h-auto border-t-0 border-r-0 border-l-0 rounded-none bg-transparent shadow-none px-0 py-0 focus:bg-transparent focus-visible:ring-0 text-muted-foreground"
                   placeholder="Short bio"
                 />
                 {saveError && (
@@ -343,12 +337,12 @@ export default function Profile() {
             ) : (
               <>
                 <div>
-                  <h2 className="text-xl font-semibold">
+                  <h2 className="text-xl font-semibold border-b border-transparent">
                     {displayName || "No name set"}
                   </h2>
                   <p className="text-sm text-muted-foreground">{user?.email}</p>
                 </div>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm w-full text-muted-foreground border-b border-transparent">
                   {user?.bio || "No bio yet."}
                 </p>
                 {avatarError && (
@@ -358,24 +352,31 @@ export default function Profile() {
             )}
           </div>
 
-          <div className="flex gap-2 shrink-0">
+          <div className="order-2 ml-auto sm:order-3 sm:ml-0 flex gap-2 shrink-0">
             {isEditing ? (
               <>
-                <Button size="sm" onClick={handleSave} disabled={isSaving}>
+                <Button
+                  size="icon-sm"
+                  onClick={handleSave}
+                  disabled={isSaving}
+                  aria-label="Save profile"
+                  title="Save"
+                >
                   {isSaving ? (
-                    <Loader2 className="size-4 mr-1 animate-spin" />
+                    <Loader2 className="size-4 animate-spin" />
                   ) : (
-                    <Check className="size-4 mr-1" />
+                    <Check className="size-4" />
                   )}
-                  Save
                 </Button>
                 <Button
-                  size="sm"
+                  size="icon-sm"
                   variant="outline"
                   onClick={handleCancel}
                   disabled={isSaving}
+                  aria-label="Cancel editing profile"
+                  title="Cancel"
                 >
-                  <X className="size-4 mr-1" /> Cancel
+                  <X className="size-4" />
                 </Button>
               </>
             ) : (

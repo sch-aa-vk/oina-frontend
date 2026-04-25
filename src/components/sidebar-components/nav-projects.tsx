@@ -18,7 +18,7 @@ import type { GameResultResponse } from "@/types/games";
 import { NavLink, useNavigate } from "react-router-dom";
 
 export function NavProjects() {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
   const navigate = useNavigate();
 
   const cached = user ? appCache.get<GameResultResponse[]>("game-history", CACHE_TTL.PERSONAL) : null;
@@ -71,7 +71,7 @@ export function NavProjects() {
     });
   }, [loadHistory, user]);
 
-  if (!user) {
+  if (!user && !isLoading) {
     return (
       <SidebarGroup className="flex-1 flex items-center justify-center group-data-[collapsible=icon]:hidden">
         <div className="mx-3 p-4 rounded-xl bg-neutral-100 border border-neutral-200 text-center space-y-3">
@@ -152,7 +152,7 @@ export function NavProjects() {
       <SidebarGroup className="group-data-[collapsible=icon]:hidden">
         <SidebarGroupLabel>History</SidebarGroupLabel>
         <SidebarMenu>
-          {isLoadingGames ? (
+          {isLoadingGames || isLoading ? (
             <SidebarMenuItem>
               <SidebarMenuButton disabled>
                 <span>Loading games...</span>
