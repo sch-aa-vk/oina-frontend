@@ -6,6 +6,7 @@ import {
   Lightbulb,
   ChevronDown,
   ChevronUp,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +21,8 @@ interface WordRowProps {
   onRemove: (id: string) => void;
   canRemove: boolean;
   isPlaced: boolean;
+  onAiClue?: () => void;
+  isAiLoadingClue?: boolean;
 }
 
 export function WordRow({
@@ -29,6 +32,8 @@ export function WordRow({
   onRemove,
   canRemove,
   isPlaced,
+  onAiClue,
+  isAiLoadingClue = false,
 }: WordRowProps) {
   const [expanded, setExpanded] = useState<boolean>(true);
   const isComplete =
@@ -147,8 +152,17 @@ export function WordRow({
                   size="icon"
                   className="absolute right-0.5 sm:right-1 top-0.5 sm:top-1 h-7 w-7 sm:h-8 sm:w-8 text-muted-foreground/50 hover:text-primary"
                   title="AI suggest clue"
+                  disabled={word.word.trim().length < 2 || isAiLoadingClue}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onAiClue?.();
+                  }}
                 >
-                  <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                  {isAiLoadingClue ? (
+                    <Loader2 className="w-3 h-3 sm:w-3.5 sm:h-3.5 animate-spin" />
+                  ) : (
+                    <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                  )}
                 </Button>
               </div>
             </div>

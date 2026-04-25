@@ -32,6 +32,10 @@ jobs:
         run: npm ci
 
       - name: Build the project
+        env:
+          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL_PROD }}
+          VITE_GEMINI_API_KEY: ${{ secrets.VITE_GEMINI_API_KEY_DEV }}
+          VITE_AI_SERVICE_URL: ${{ secrets.VITE_AI_SERVICE_URL }}
         run: npm run build
 
       - name: Configure AWS credentials

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { mapChooseMeContent, buildCreateGamePayload, buildPublishPayload, validateCreatePayload } from "@/lib/gameMappers";
 import { gamesService } from "@/services/games";
+import { aiService } from "@/services/ai";
 import type { GameVisibility } from "@/types/games";
 import {
   GameTopBar,
@@ -25,6 +26,8 @@ import {
 } from "@/components/game/choose-me";
 import type { GameOption, QuestionField } from "@/components/game/choose-me";
 
+const DEFAULT_OPTION_EMOJIS = ['❤️', '🌟', '🔥', '💫'];
+
 export default function ChooseMe() {
   const navigate = useNavigate();
   const [step, setStep] = useState<number>(1);
@@ -41,6 +44,8 @@ export default function ChooseMe() {
   const [isPublishing, setIsPublishing] = useState<boolean>(false);
   const [submitError, setSubmitError] = useState<string>("");
   const [draftGameId, setDraftGameId] = useState<string | null>(null);
+  const [isAiLoading, setIsAiLoading] = useState<boolean>(false);
+  const [aiError, setAiError] = useState<string | null>(null);
 
   const updateQuestion = (
     qIndex: number,
@@ -57,6 +62,31 @@ export default function ChooseMe() {
   };
   const removeQuestion = (i: number): void => {
     setQuestions((p) => p.filter((_, idx) => idx !== i));
+  };
+
+  const handleAiGenerate = async (): Promise<void> => {
+    setIsAiLoading(true);
+    setAiError(null);
+    try {
+      const response = await aiService.generateQuestions({
+        topic: `${recipient.name}, ${recipient.occasion}`,
+        count: 5,
+        language: 'ru',
+      });
+      const generated = response.questions.map((q) => ({
+        question: q.question,
+        options: q.options.map((text, i): GameOption => ({
+          text,
+          emoji: DEFAULT_OPTION_EMOJIS[i % DEFAULT_OPTION_EMOJIS.length],
+          isCorrect: i === q.correctIndex,
+        })),
+      }));
+      setQuestions(generated);
+    } catch {
+      setAiError('AI сервис не отвечает, попробуйте позже');
+    } finally {
+      setIsAiLoading(false);
+    }
   };
 
   const completeness = {
@@ -197,6 +227,10 @@ export default function ChooseMe() {
                   `AI can craft personalized questions for ${name}`
                 }
                 subtitle="Tell us about them and we'll generate fun, meaningful options"
+                onGenerate={handleAiGenerate}
+                isLoading={isAiLoading}
+                disabled={!recipient.name.trim() || !recipient.occasion.trim()}
+                error={aiError}
               />
             )}
 

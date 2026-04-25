@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { mapGuessByEmojiContent, buildCreateGamePayload, buildPublishPayload, validateCreatePayload } from "@/lib/gameMappers";
 import { gamesService } from "@/services/games";
+import { aiService } from "@/services/ai";
 import type { GameVisibility } from "@/types/games";
 import {
   GameTopBar,
@@ -45,6 +46,8 @@ export default function GuessByEmoji() {
   const [isPublishing, setIsPublishing] = useState<boolean>(false);
   const [submitError, setSubmitError] = useState<string>("");
   const [draftGameId, setDraftGameId] = useState<string | null>(null);
+  const [isAiLoading, setIsAiLoading] = useState<boolean>(false);
+  const [aiError, setAiError] = useState<string | null>(null);
 
   const updatePuzzle = (id: string, changes: Partial<EmojiPuzzle>): void => {
     setPuzzles((prev) =>
@@ -56,6 +59,30 @@ export default function GuessByEmoji() {
   };
   const removePuzzle = (id: string): void => {
     setPuzzles((p) => p.filter((p) => p.id !== id));
+  };
+
+  const handleAiGenerate = async (): Promise<void> => {
+    setIsAiLoading(true);
+    setAiError(null);
+    try {
+      const response = await aiService.generateEmoji({
+        topic: `${recipient.name}, ${recipient.occasion}`,
+        count: 5,
+        language: 'ru',
+      });
+      const generated: EmojiPuzzle[] = response.puzzles.map((p) => ({
+        id: Math.random().toString(36).slice(2),
+        emojis: [...p.emojis],
+        answer: p.answer,
+        hint: p.hint ?? '',
+        difficulty: 'medium' as DifficultyLevel,
+      }));
+      setPuzzles(generated);
+    } catch {
+      setAiError('AI сервис не отвечает, попробуйте позже');
+    } finally {
+      setIsAiLoading(false);
+    }
   };
 
   const completeness = {
@@ -197,6 +224,10 @@ export default function GuessByEmoji() {
                   `AI can suggest emoji combos for ${name}`
                 }
                 subtitle="Describe a memory or word and we'll pick the perfect emojis"
+                onGenerate={handleAiGenerate}
+                isLoading={isAiLoading}
+                disabled={!recipient.name.trim() || !recipient.occasion.trim()}
+                error={aiError}
               />
             )}
 

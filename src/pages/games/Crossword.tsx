@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { mapCrosswordContent, buildCreateGamePayload, buildPublishPayload, validateCreatePayload } from "@/lib/gameMappers";
 import { gamesService } from "@/services/games";
+import { aiService } from "@/services/ai";
 import type { GameVisibility } from "@/types/games";
 import {
   GameTopBar,
@@ -59,6 +60,7 @@ export default function Crossword() {
   const [isPublishing, setIsPublishing] = useState<boolean>(false);
   const [submitError, setSubmitError] = useState<string>("");
   const [draftGameId, setDraftGameId] = useState<string | null>(null);
+  const [aiLoadingClueId, setAiLoadingClueId] = useState<string | null>(null);
 
   const validWordCount = words.filter(
     (w) => w.word.trim().length >= 2 && w.clue.trim()
@@ -79,6 +81,24 @@ export default function Crossword() {
   const removeWord = (id: string): void => {
     setWords((p) => p.filter((w) => w.id !== id));
     setGrid(null);
+  };
+
+  const handleAiClue = async (wordId: string): Promise<void> => {
+    const w = words.find((w) => w.id === wordId);
+    if (!w || w.word.trim().length < 2) return;
+    setAiLoadingClueId(wordId);
+    try {
+      const result = await aiService.generateCrossword({
+        mode: 'word-to-definition',
+        input: w.word.trim(),
+        language: 'ru',
+      });
+      updateWord(wordId, { clue: result.result });
+    } catch {
+      // Silently fail — user can type the clue manually
+    } finally {
+      setAiLoadingClueId(null);
+    }
   };
 
   const buildGrid = useCallback((): void => {
@@ -236,7 +256,7 @@ export default function Crossword() {
                 title={(name: string) =>
                   `AI can suggest words & clues for ${name}`
                 }
-                subtitle="Tell us about shared memories and we'll generate meaningful words"
+                subtitle='Enter a word and tap ✨ next to the clue field to get an AI suggestion'
               />
             )}
 
@@ -278,6 +298,8 @@ export default function Crossword() {
                     onRemove={removeWord}
                     canRemove={words.length > MIN_WORDS}
                     isPlaced={placedWordIds.has(w.id)}
+                    onAiClue={() => handleAiClue(w.id)}
+                    isAiLoadingClue={aiLoadingClueId === w.id}
                   />
                 ))}
                 {words.length < MAX_WORDS && (
