@@ -1,45 +1,25 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  Folder,
-  Forward,
-  Gift,
-  Grid3x3,
-  MoreHorizontal,
-  Smile,
-  Trash2,
-  User2Icon,
-  Users,
-} from "lucide-react";
+import { Gift, Grid3x3, Smile, Sparkles, User2Icon, Users } from "lucide-react";
 
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarMenu,
-  SidebarMenuAction,
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { gamesService } from "@/services/games";
-import type { GameResponse } from "@/types/games";
+import type { GameResultResponse } from "@/types/games";
 import { NavLink, useNavigate } from "react-router-dom";
-import { useSidebar } from "@/hooks/use-sidebar";
 
 export function NavProjects() {
-  const { isMobile } = useSidebar();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [games, setGames] = useState<GameResponse[]>([]);
+  const [history, setHistory] = useState<GameResultResponse[]>([]);
   const [isLoadingGames, setIsLoadingGames] = useState(false);
   const [gamesError, setGamesError] = useState("");
 
@@ -47,20 +27,20 @@ export function NavProjects() {
     let isMounted = true;
 
     if (!user) {
-      setGames([]);
+      setHistory([]);
       setGamesError("");
       setIsLoadingGames(false);
       return;
     }
 
-    const loadGames = async () => {
+    const loadHistory = async () => {
       setIsLoadingGames(true);
 
       try {
         setGamesError("");
-        const response = await gamesService.listGames();
+        const response = await gamesService.getGameHistory();
         if (isMounted) {
-          setGames(response.games);
+          setHistory(response.results);
         }
       } catch (error) {
         const parsed = gamesService.mapError(error);
@@ -74,7 +54,7 @@ export function NavProjects() {
       }
     };
 
-    loadGames();
+    loadHistory();
 
     return () => {
       isMounted = false;
@@ -108,23 +88,51 @@ export function NavProjects() {
   }
 
   const quickLinks = [
-    { label: "Choose Me", href: "/create/choose-me", icon: Users },
-    { label: "Guess by Emoji", href: "/create/guess-by-emoji", icon: Smile },
-    { label: "Crossword", href: "/create/crossword", icon: Grid3x3 },
-    { label: "Gift Website", href: "/gift-generator", icon: Gift },
+    {
+      label: "Choose Me",
+      href: "/create/choose-me",
+      icon: Users,
+      aiPowered: true,
+    },
+    {
+      label: "Guess by Emoji",
+      href: "/create/guess-by-emoji",
+      icon: Smile,
+      aiPowered: true,
+    },
+    {
+      label: "Crossword",
+      href: "/create/crossword",
+      icon: Grid3x3,
+      aiPowered: true,
+    },
+    {
+      label: "Gift Website",
+      href: "/gift-generator",
+      icon: Gift,
+      aiPowered: true,
+    },
   ];
 
   return (
     <>
       <SidebarGroup className="group-data-[collapsible=icon]:hidden">
-        <SidebarGroupLabel>Create</SidebarGroupLabel>
+        <SidebarGroupLabel className="flex items-center gap-1.5">
+          Create
+        </SidebarGroupLabel>
         <SidebarMenu>
-          {quickLinks.map(({ label, href, icon: Icon }) => (
+          {quickLinks.map(({ label, href, icon: Icon, aiPowered }) => (
             <SidebarMenuItem key={href}>
               <SidebarMenuButton asChild className="hover:bg-neutral-200">
                 <NavLink to={href}>
                   <Icon className="w-4 h-4" />
                   <span>{label}</span>
+                  {aiPowered && (
+                    <span className="flex items-center gap-0.5 text-[10px] font-medium bg-blue-50 px-1.5 py-0.5 rounded-full">
+                      <Sparkles className="w-2.5 h-2.5" />
+                      AI
+                    </span>
+                  )}
                 </NavLink>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -133,68 +141,46 @@ export function NavProjects() {
       </SidebarGroup>
       <SidebarGroup className="group-data-[collapsible=icon]:hidden">
         <SidebarGroupLabel>History</SidebarGroupLabel>
-      <SidebarMenu>
-        {isLoadingGames ? (
-          <SidebarMenuItem>
-            <SidebarMenuButton disabled>
-              <span>Loading games...</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        ) : gamesError ? (
-          <SidebarMenuItem>
-            <SidebarMenuButton disabled>
-              <span>Unable to load games</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        ) : games.length === 0 ? (
-          <SidebarMenuItem>
-            <SidebarMenuButton disabled>
-              <span>No games yet</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        ) : (
-          games.map((game) => (
-          <SidebarMenuItem
-            key={game.gameId}
-            className="hover:bg-neutral-200 rounded-lg cursor-pointer"
-          >
-            <SidebarMenuButton asChild className="hover:bg-neutral-200">
-              <NavLink to={`/games/${game.gameId}`}>
-                <span className="truncate">{game.title}</span>
-              </NavLink>
-            </SidebarMenuButton>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuAction showOnHover>
-                  <MoreHorizontal className="cursor-pointer" />
-                  <span className="sr-only">More</span>
-                </SidebarMenuAction>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                className="w-48 rounded-lg"
-                side={isMobile ? "bottom" : "right"}
-                align={isMobile ? "end" : "start"}
+        <SidebarMenu>
+          {isLoadingGames ? (
+            <SidebarMenuItem>
+              <SidebarMenuButton disabled>
+                <span>Loading games...</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          ) : gamesError ? (
+            <SidebarMenuItem>
+              <SidebarMenuButton disabled>
+                <span>Unable to load games</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          ) : history.length === 0 ? (
+            <SidebarMenuItem>
+              <SidebarMenuButton disabled>
+                <span>No games played yet</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          ) : (
+            history.map((result) => (
+              <SidebarMenuItem
+                key={result.gameResultId}
+                className="hover:bg-neutral-200 rounded-lg cursor-pointer"
               >
-                <DropdownMenuItem className="cursor-pointer [&:hover]:bg-neutral-200">
-                  <Folder className="text-muted-foreground" />
-                  <span>View Project</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem className="cursor-pointer [&:hover]:bg-neutral-200">
-                  <Forward className="text-muted-foreground" />
-                  <span>Share Project</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="cursor-pointer [&:hover]:bg-neutral-200">
-                  <Trash2 className="text-muted-foreground" />
-                  <span>Delete Project</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </SidebarMenuItem>
-          ))
-        )}
-      </SidebarMenu>
-    </SidebarGroup>
+                <SidebarMenuButton asChild className="hover:bg-neutral-200">
+                  <NavLink to={`/games/${result.gameId}`}>
+                    <span className="truncate">
+                      {result.gameTitle ?? "Deleted game"}
+                    </span>
+                    <span className="ml-auto text-[10px] text-muted-foreground shrink-0">
+                      {result.score}/{result.maxScore}
+                    </span>
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))
+          )}
+        </SidebarMenu>
+      </SidebarGroup>
     </>
   );
 }

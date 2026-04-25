@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -12,18 +12,40 @@ interface GamePlayProps {
   recipient: Recipient;
   personalMessage: string;
   showSolution: boolean;
+  onComplete?: (score: number, total: number) => void;
 }
 
 export function GamePlay({
   grid,
   recipient,
   personalMessage,
+  onComplete,
 }: GamePlayProps) {
   const [userInputs, setUserInputs] = useState<Record<string, string>>({});
   const [selectedCell, setSelectedCell] = useState<{ r: number; c: number } | null>(null);
   const [selectedDir, setSelectedDir] = useState<Direction>("across");
+  const [isComplete, setIsComplete] = useState(false);
   const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const key = (r: number, c: number) => `${r}-${c}`;
+
+  const correctWordCount = useMemo(() => {
+    return grid.placedWords.filter((pw) => {
+      const dr = pw.direction === "down" ? 1 : 0;
+      const dc = pw.direction === "across" ? 1 : 0;
+      return Array.from({ length: pw.word.length }, (_, i) => ({
+        r: pw.row + dr * i,
+        c: pw.col + dc * i,
+        letter: pw.word[i]?.toLocaleUpperCase() ?? "",
+      })).every(({ r, c, letter }) => (userInputs[key(r, c)] ?? "") === letter);
+    }).length;
+  }, [grid.placedWords, userInputs]);
+
+  useEffect(() => {
+    if (!isComplete && grid.placedWords.length > 0 && correctWordCount === grid.placedWords.length) {
+      setIsComplete(true);
+      onComplete?.(correctWordCount, grid.placedWords.length);
+    }
+  }, [correctWordCount, grid.placedWords.length, isComplete, onComplete]);
 
   const focusCell = useCallback((r: number, c: number): void => {
     const input = inputRefs.current[key(r, c)];
@@ -154,6 +176,41 @@ export function GamePlay({
     CELL_SM = 36,
     NUM_SIZE = 8,
     NUM_SIZE_SM = 9;
+
+  if (isComplete) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950 dark:to-teal-950 flex items-center justify-center p-4">
+        <div className="bg-background rounded-3xl border border-border shadow-2xl p-8 max-w-md w-full space-y-6">
+          <div className="text-center space-y-2">
+            <div className="text-6xl font-bold bg-gradient-to-r from-emerald-500 to-teal-500 bg-clip-text text-transparent">
+              {correctWordCount}/{grid.placedWords.length}
+            </div>
+            <p className="text-lg font-semibold">Crossword Complete!</p>
+            <p className="text-sm text-muted-foreground">
+              {correctWordCount === grid.placedWords.length
+                ? "Perfect! You solved it! 🎉"
+                : "Great job! 🌟"}
+            </p>
+          </div>
+
+          {personalMessage && (
+            <div className={cn("p-4 rounded-xl border", CROSSWORD_THEME.messageBg, "border-border")}>
+              <p className={cn("text-xs font-medium mb-1", CROSSWORD_THEME.messageLabel)}>
+                A message for you 💌
+              </p>
+              <p className={cn("text-sm", CROSSWORD_THEME.messageBody)}>
+                {personalMessage}
+              </p>
+            </div>
+          )}
+
+          <Button onClick={() => window.location.reload()} className="w-full" size="lg">
+            Play Again
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950 dark:to-teal-950 flex items-center justify-center p-4">

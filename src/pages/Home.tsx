@@ -1,69 +1,11 @@
 import { useEffect, useState } from "react";
-import { Plus, Eye, Sparkles, TrendingUp, Layers, Heart } from "lucide-react";
+import { Eye, Sparkles, TrendingUp, Heart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { useAuth } from "@/contexts/AuthContext";
 import { gamesService } from "@/services/games";
 import type { GameSummaryResponse, GameType, SortBy } from "@/types/games";
-
-
-interface TemplateGame {
-  id: number;
-  name: string;
-  emoji: string;
-  description: string;
-  route: string;
-  gradient: string;
-  accentBg: string;
-  tag: string;
-}
-
-const templateGames: TemplateGame[] = [
-  {
-    id: 1,
-    name: "Choose Me",
-    emoji: "🎯",
-    description: "Multiple choice questions that reveal how well they know you",
-    route: "/create/choose-me",
-    gradient: "from-violet-400 via-purple-500 to-indigo-500",
-    accentBg: "bg-violet-50 dark:bg-violet-950/30",
-    tag: "Most loved",
-  },
-  {
-    id: 2,
-    name: "Guess by Emoji",
-    emoji: "😄",
-    description: "Hide a word, phrase, or memory inside a string of emojis",
-    route: "/create/guess-by-emoji",
-    gradient: "from-amber-400 via-orange-400 to-rose-400",
-    accentBg: "bg-amber-50 dark:bg-amber-950/30",
-    tag: "Super fun",
-  },
-  {
-    id: 3,
-    name: "Crossword",
-    emoji: "📝",
-    description:
-      "Craft a crossword full of words that mean something to you both",
-    route: "/create/crossword",
-    gradient: "from-emerald-400 via-teal-400 to-cyan-500",
-    accentBg: "bg-emerald-50 dark:bg-emerald-950/30",
-    tag: "Thoughtful",
-  },
-  {
-    id: 4,
-    name: "Gift Page",
-    emoji: "🎁",
-    description:
-      "Generate a beautiful personalised gift site and share it with a single link",
-    route: "/gift-generator",
-    gradient: "from-rose-400 via-pink-400 to-fuchsia-500",
-    accentBg: "bg-rose-50 dark:bg-rose-950/30",
-    tag: "New",
-  },
-];
 
 const gameEmoji: Record<GameType, string> = {
   "choose-me": "🎯",
@@ -76,82 +18,6 @@ const gradientByType: Record<GameType, string> = {
   "guess-by-emoji": "from-amber-500 to-rose-500",
   crossword: "from-emerald-500 to-teal-500",
 };
-
-
-function TemplateCard({ game }: { game: TemplateGame }) {
-  const navigate = useNavigate();
-  const { guard } = useAuthGuard();
-
-  return (
-    <div className="group flex flex-col gap-2 sm:gap-3">
-      <div
-        onClick={() => navigate(game.route)}
-        className={cn(
-          "relative h-32 sm:h-44 rounded-xl sm:rounded-2xl overflow-hidden cursor-pointer transition-all duration-300",
-          "ring-1 ring-black/5 dark:ring-white/5",
-          "group-hover:ring-2 group-hover:ring-primary/40 group-hover:shadow-xl group-hover:-translate-y-1",
-          "active:scale-[0.98] sm:active:scale-100"
-        )}
-      >
-        <div
-          className={cn(
-            "absolute inset-0 bg-linear-to-br opacity-90",
-            game.gradient
-          )}
-        />
-
-        <div
-          className="absolute inset-0 opacity-10"
-          style={{
-            backgroundImage: `radial-gradient(circle at 20% 80%, white 1px, transparent 1px),
-              radial-gradient(circle at 80% 20%, white 1px, transparent 1px),
-              radial-gradient(circle at 50% 50%, white 0.5px, transparent 0.5px)`,
-            backgroundSize: "40px 40px, 60px 60px, 20px 20px",
-          }}
-        />
-
-        <div className="absolute top-3 sm:top-4 left-3 sm:left-4 text-2xl sm:text-4xl drop-shadow-sm select-none">
-          {game.emoji}
-        </div>
-
-        <div className="absolute top-3 sm:top-4 right-3 sm:right-4">
-          <span className="text-[10px] sm:text-xs font-semibold px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full bg-white/20 text-white backdrop-blur-sm">
-            {game.tag}
-          </span>
-        </div>
-
-        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hidden sm:block" />
-
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            guard(() => navigate(game.route));
-          }}
-          className="absolute inset-0 items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 hidden sm:flex"
-          aria-label={`Create ${game.name} game`}
-        >
-          <div className="flex items-center gap-2 bg-white text-gray-900 font-semibold text-sm px-4 py-2.5 rounded-full shadow-lg hover:scale-105 transition-transform">
-            <Plus className="w-4 h-4" />
-            Create
-          </div>
-        </button>
-
-        <div className="absolute bottom-2 sm:bottom-3 left-2 sm:left-3 flex items-center gap-1 text-white/70 text-[10px] sm:text-xs">
-          <Sparkles className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-          <span>AI-powered</span>
-        </div>
-      </div>
-
-      <div className="px-0.5 space-y-0.5">
-        <p className="text-xs sm:text-sm font-semibold">{game.name}</p>
-        <p className="text-[10px] sm:text-xs text-muted-foreground leading-relaxed line-clamp-2">
-          {game.description}
-        </p>
-      </div>
-    </div>
-  );
-}
-
 
 function PublicGameCard({
   game,
@@ -215,7 +81,7 @@ function PublicGameCard({
       <div className="px-0.5 flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="text-xs sm:text-sm font-semibold truncate">{game.title}</p>
-          <p className="text-[10px] sm:text-xs text-muted-foreground">by @{game.authorName}</p>
+          <p className="text-[10px] sm:text-xs text-muted-foreground">by @{game.authorName || "N/A"}</p>
         </div>
         <button
           onClick={(e) => { e.stopPropagation(); onToggleLike(game.gameId); }}
@@ -233,7 +99,6 @@ function PublicGameCard({
     </div>
   );
 }
-
 
 function SectionHeader({
   icon: Icon,
@@ -371,20 +236,6 @@ export default function Home() {
           </p>
         </div>
       </div>
-
-      <section className="rounded-xl sm:rounded-2xl bg-muted/40 dark:bg-muted/20 p-3 sm:p-5">
-        <SectionHeader
-          icon={Layers}
-          title="Templates"
-          subtitle="Start from a game type and make it yours"
-          badge={`${templateGames.length} types`}
-        />
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-4">
-          {templateGames.map((game) => (
-            <TemplateCard key={game.id} game={game} />
-          ))}
-        </div>
-      </section>
 
       <section className="rounded-xl sm:rounded-2xl bg-muted/40 dark:bg-muted/20 p-3 sm:p-5">
         <div className="flex items-start justify-between gap-3 sm:gap-4 mb-3.5 sm:mb-5">

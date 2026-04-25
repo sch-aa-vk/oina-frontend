@@ -100,3 +100,29 @@ export interface GameApiError {
   message: string;
   debugMessage?: string;
 }
+
+export type CompletionStatus = "completed" | "abandoned";
+
+export interface GameResultResponse {
+  gameResultId: string;
+  gameId: string;
+  gameTitle?: string;
+  isGameDeleted?: boolean;
+  score: number;
+  maxScore: number;
+  duration: number;
+  completionStatus: CompletionStatus;
+  playedAt: string;
+}
+
+export interface GameHistoryResponse {
+  results: GameResultResponse[];
+  nextCursor?: string;
+}
+
+export interface RecordGameResultPayload {
+  score: number;
+  maxScore: number;
+  duration: number;
+  completionStatus: CompletionStatus;
+}

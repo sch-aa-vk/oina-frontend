@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,25 @@ export default function GameDetails() {
   const [game, setGame] = useState<GameResponse | null>(null);
   const [errorMessage, setErrorMessage] = useState<string>("");
   const hasGameId = gameId.trim().length > 0;
+
+  const startedAt = useRef<number>(0);
+
+  useEffect(() => {
+    if (state === "ready") {
+      startedAt.current = Date.now();
+    }
+  }, [state]);
+
+  const handleGameComplete = useCallback(
+    (score: number, total: number) => {
+      if (!isAuthenticated || game?.visibility === "draft") return;
+      const duration = Date.now() - startedAt.current;
+      gamesService
+        .recordGameResult(gameId, { score, maxScore: total, duration, completionStatus: "completed" })
+        .catch(() => {});
+    },
+    [gameId, isAuthenticated, game?.visibility]
+  );
 
   // TODO: isLiked cannot be determined from API response — initialised to false on every mount
   const [isLiked, setIsLiked] = useState(false);
@@ -158,6 +177,7 @@ export default function GameDetails() {
           recipient={recipient}
           personalMessage={personalMessage}
           shuffle={settings.shuffle || false}
+          onComplete={handleGameComplete}
         />
       );
     }
@@ -171,6 +191,7 @@ export default function GameDetails() {
           recipient={recipient}
           personalMessage={personalMessage}
           showAnswers={settings.showAnswers || false}
+          onComplete={handleGameComplete}
         />
       );
     }
@@ -199,12 +220,13 @@ export default function GameDetails() {
           recipient={recipient}
           personalMessage={personalMessage}
           showSolution={settings.showSolution || false}
+          onComplete={handleGameComplete}
         />
       );
     }
 
     return null;
-  }, [game]);
+  }, [game, handleGameComplete]);
 
   if (gamePlayContent && game?.visibility !== "draft") {
     return (

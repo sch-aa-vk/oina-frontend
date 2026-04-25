@@ -3,11 +3,13 @@ import api from "./api";
 import type {
   CreateGameRequest,
   GameApiError,
+  GameHistoryResponse,
   GameResponse,
   GameType,
   ListGamesResponse,
   PublicGamesListResponse,
   PublishGameRequest,
+  RecordGameResultPayload,
   SortBy,
 } from "@/types/games";
 
@@ -130,6 +132,17 @@ export const gamesService = {
   async restoreGame(gameId: string): Promise<GameResponse> {
     const response = await api.post<GameResponse>(`/games/${gameId}/restore`);
     return response.data;
+  },
+
+  async getGameHistory(cursor?: string): Promise<GameHistoryResponse> {
+    const response = await api.get<GameHistoryResponse>("/games/history", {
+      params: cursor ? { cursor } : undefined,
+    });
+    return response.data;
+  },
+
+  async recordGameResult(gameId: string, payload: RecordGameResultPayload): Promise<void> {
+    await api.post(`/games/${gameId}/play`, payload);
   },
 
   mapError(error: unknown): GameApiError {
