@@ -5,10 +5,6 @@ import type {
   UploadedImage,
 } from "../types/giftSite";
 
-// ---------------------------------------------------------------------------
-// Storage helpers
-// ---------------------------------------------------------------------------
-
 export function getStorageApi(): StorageLike | null {
   if (typeof window === "undefined") return null;
   const storageWindow = window as Window & { storage?: StorageLike };
@@ -32,7 +28,7 @@ export function readAllGiftRecords(
       const parsed = JSON.parse(raw) as GiftRecord;
       records.push(parsed);
     } catch {
-      // Ignore malformed records.
+      // Ignore malformed records
     }
   };
 
@@ -53,10 +49,6 @@ export function readAllGiftRecords(
       new Date(a.createdAt || 0).getTime(),
   );
 }
-
-// ---------------------------------------------------------------------------
-// Prompt builder — optimised for Gemini 2.5 Pro extended thinking
-// ---------------------------------------------------------------------------
 
 export function buildGiftPrompt({
   recipientName,
@@ -154,42 +146,27 @@ Before writing any HTML, reason through these steps internally:
 Output only the final HTML — no thinking text, no explanation.`;
 }
 
-// ---------------------------------------------------------------------------
-// Utility helpers
-// ---------------------------------------------------------------------------
-
 export function randomGiftId(): string {
   return Math.random().toString(36).slice(2, 8);
 }
 
-/**
- * Strips markdown fences, preamble prose, and trailing prose that Gemini 2.5
- * Pro sometimes emits around the HTML output.
- */
 export function normalizeGeneratedHtml(
   text: string | null | undefined,
 ): string {
   if (!text || typeof text !== "string") return "";
   let trimmed = text.trim();
 
-  // 1. Strip fenced code blocks: ```html … ``` or ``` … ```
   const fenced = trimmed.match(/^```(?:html)?\s*([\s\S]*?)\s*```$/i);
   if (fenced) return fenced[1].trim();
 
-  // 2. Strip any prose preamble that appears before <!doctype or <html
   const htmlStart = trimmed.search(/<!doctype\s+html|<html[\s>]/i);
   if (htmlStart > 0) trimmed = trimmed.slice(htmlStart);
 
-  // 3. Strip any trailing prose after </html>
   const htmlEnd = trimmed.search(/<\/html>/i);
   if (htmlEnd !== -1) trimmed = trimmed.slice(0, htmlEnd + 7);
 
   return trimmed;
 }
-
-// ---------------------------------------------------------------------------
-// HTML safety / escape
-// ---------------------------------------------------------------------------
 
 function escapeHtml(value: string): string {
   return String(value)
@@ -199,10 +176,6 @@ function escapeHtml(value: string): string {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
 }
-
-// ---------------------------------------------------------------------------
-// Image compression
-// ---------------------------------------------------------------------------
 
 export function compressImageFile(
   file: File,
@@ -252,22 +225,13 @@ export function compressImageFile(
   });
 }
 
-// ---------------------------------------------------------------------------
-// Gallery injection
-// ---------------------------------------------------------------------------
-
-/**
- * Sanitises a raw filename into a human-readable caption.
- * e.g. "fca49300-e7f1-11ea-9f51-cfd949b31560.png" → "Memory 1"
- *      "our_trip_to_paris.jpg"                     → "Our Trip To Paris"
- */
 function prettifyImageName(raw: string, fallback: string): string {
   if (!raw) return fallback;
-  // Strip extension
+
   const noExt = raw.replace(/\.[^.]+$/, "");
-  // If it looks like a UUID or random hash (no real words), use fallback
-  if (/^[a-f0-9\-]{20,}$/i.test(noExt)) return fallback;
-  // Replace separators with spaces and title-case
+  
+  if (/^[a-f0-9\\-]{20,}$/i.test(noExt)) return fallback;
+
   return noExt
     .replace(/[-_]+/g, " ")
     .replace(/\b\w/g, (c) => c.toUpperCase())
@@ -424,10 +388,6 @@ body > #giftsite-user-gallery {
   return `${html}${galleryBlock}`;
 }
 
-// ---------------------------------------------------------------------------
-// Adaptive HTML safety wrapper
-// ---------------------------------------------------------------------------
-
 export function ensureAdaptiveHtml(html: string): string {
   if (!html) return "";
   let output = String(html).trim();
@@ -511,10 +471,6 @@ export function ensureAdaptiveHtml(html: string): string {
   return output;
 }
 
-// ---------------------------------------------------------------------------
-// Misc
-// ---------------------------------------------------------------------------
-
 export function pickRandomTemplateId(
   ids: string[],
   fallbackId: string,
@@ -524,33 +480,12 @@ export function pickRandomTemplateId(
   return ids[index] || fallbackId;
 }
 
-// ---------------------------------------------------------------------------
-// Recommended Gemini 2.5 Pro API config (use at call site)
-// ---------------------------------------------------------------------------
-
-/**
- * Generation config optimised for Gemini 2.5 Pro.
- *
- * Usage:
- *   import { GEMINI_GENERATION_CONFIG } from "./helpers";
- *   const response = await generativeModel.generateContent({
- *     contents: [...],
- *     generationConfig: GEMINI_GENERATION_CONFIG,
- *   });
- *
- * Adjust temperature per use-case:
- *   - 0.4–0.6  → accurate, predictable HTML structure
- *   - 0.7–0.85 → balanced creativity + accuracy (default)
- *   - 0.9–1.0  → maximum creative variation
- */
 export const GEMINI_GENERATION_CONFIG = {
   temperature: 0.75,
   topP: 0.92,
   topK: 40,
   maxOutputTokens: 8192,
-  // Gemini 2.5 Pro: extended thinking budget
-  // Gives the model space to reason through layout, palette, and animations
-  // before committing to output — dramatically improves HTML coherence.
+
   thinkingConfig: {
     thinkingBudget: 8192,
   },

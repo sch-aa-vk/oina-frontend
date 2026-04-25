@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { appCache, CACHE_TTL } from "@/lib/cache";
 import {
   Camera,
   Pencil,
@@ -33,6 +34,7 @@ import { giftSiteService } from "@/services/giftSite";
 import type { AvatarContentType } from "@/services/users";
 import type { MyGiftItem } from "@/services/giftSite";
 import type { GameResponse } from "@/types/games";
+import type { User } from "@/types/auth";
 
 const ALLOWED_AVATAR_TYPES: AvatarContentType[] = [
   "image/jpeg",
@@ -62,20 +64,31 @@ export default function Profile() {
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [avatarError, setAvatarError] = useState("");
 
-  const [games, setGames] = useState<GameResponse[]>([]);
+  const cachedGames = appCache.get<GameResponse[]>(
+    "my-games",
+    CACHE_TTL.PERSONAL,
+  );
+  const cachedGifts = appCache.get<MyGiftItem[]>(
+    "my-gifts",
+    CACHE_TTL.PERSONAL,
+  );
+
+  const [games, setGames] = useState<GameResponse[]>(cachedGames ?? []);
   const [nextCursor, setNextCursor] = useState<string | undefined>(undefined);
   const [gamesError, setGamesError] = useState<string>("");
-  const [isLoadingGames, setIsLoadingGames] = useState<boolean>(true);
+  const [isLoadingGames, setIsLoadingGames] = useState<boolean>(!cachedGames);
   const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
 
-  const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null);
+  const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(
+    null,
+  );
   const [deletingGameId, setDeletingGameId] = useState<string | null>(null);
   const [restoringGameId, setRestoringGameId] = useState<string | null>(null);
   const [gameActionError, setGameActionError] = useState<string>("");
 
-  const [gifts, setGifts] = useState<MyGiftItem[]>([]);
+  const [gifts, setGifts] = useState<MyGiftItem[]>(cachedGifts ?? []);
   const [giftsNextCursor, setGiftsNextCursor] = useState<string | undefined>();
-  const [isLoadingGifts, setIsLoadingGifts] = useState(true);
+  const [isLoadingGifts, setIsLoadingGifts] = useState(!cachedGifts);
   const [isLoadingMoreGifts, setIsLoadingMoreGifts] = useState(false);
   const [giftsError, setGiftsError] = useState("");
 
@@ -102,6 +115,7 @@ export default function Profile() {
         username: tempUsername || undefined,
       });
       const newUser = { ...user!, ...updated };
+      appCache.set("me", newUser);
       setUser(newUser);
       localStorage.setItem("user", JSON.stringify(newUser));
       setIsEditing(false);
@@ -135,10 +149,11 @@ export default function Profile() {
     setAvatarError("");
     try {
       const { presignedUrl, avatarUrl } = await usersService.uploadAvatar(
-        file.type as AvatarContentType
+        file.type as AvatarContentType,
       );
       await usersService.putFileToS3(presignedUrl, file);
       const newUser = { ...user!, avatarUrl };
+      appCache.set("me", newUser);
       setUser(newUser);
       localStorage.setItem("user", JSON.stringify(newUser));
     } catch (err) {
@@ -154,11 +169,13 @@ export default function Profile() {
     setGameActionError("");
     try {
       await gamesService.deleteGame(gameId);
-      setGames((prev) =>
-        prev.map((g) =>
-          g.gameId === gameId ? { ...g, isDeleted: true, deletedAt: new Date().toISOString() } : g
-        )
+      const updated = games.map((g) =>
+        g.gameId === gameId
+          ? { ...g, isDeleted: true, deletedAt: new Date().toISOString() }
+          : g,
       );
+      setGames(updated);
+      appCache.set("my-games", updated);
       setConfirmingDeleteId(null);
     } catch (err) {
       setGameActionError(gamesService.mapError(err).message);
@@ -172,7 +189,9 @@ export default function Profile() {
     setGameActionError("");
     try {
       const restored = await gamesService.restoreGame(gameId);
-      setGames((prev) => prev.map((g) => (g.gameId === gameId ? restored : g)));
+      const updated = games.map((g) => (g.gameId === gameId ? restored : g));
+      setGames(updated);
+      appCache.set("my-games", updated);
     } catch (err) {
       setGameActionError(gamesService.mapError(err).message);
     } finally {
@@ -183,13 +202,15 @@ export default function Profile() {
   const loadGifts = async (cursor?: string) => {
     if (cursor) {
       setIsLoadingMoreGifts(true);
-    } else {
+    } else if (!appCache.get("my-gifts", CACHE_TTL.PERSONAL)) {
       setIsLoadingGifts(true);
     }
     setGiftsError("");
     try {
       const res = await giftSiteService.listMyGifts(cursor);
-      setGifts((prev) => cursor ? [...prev, ...res.gifts] : res.gifts);
+      const updated = cursor ? [...gifts, ...res.gifts] : res.gifts;
+      setGifts(updated);
+      if (!cursor) appCache.set("my-gifts", updated);
       setGiftsNextCursor(res.nextCursor);
     } catch {
       setGiftsError("Could not load gifts. Please try again.");
@@ -202,16 +223,16 @@ export default function Profile() {
   const loadGames = async (cursor?: string) => {
     if (cursor) {
       setIsLoadingMore(true);
-    } else {
+    } else if (!appCache.get("my-games", CACHE_TTL.PERSONAL)) {
       setIsLoadingGames(true);
     }
 
     try {
       setGamesError("");
       const response = await gamesService.listGames(cursor);
-      setGames((prev) =>
-        cursor ? [...prev, ...response.games] : response.games
-      );
+      const updated = cursor ? [...games, ...response.games] : response.games;
+      setGames(updated);
+      if (!cursor) appCache.set("my-games", updated);
       setNextCursor(response.nextCursor);
     } catch (error) {
       const parsed = gamesService.mapError(error);
@@ -224,10 +245,19 @@ export default function Profile() {
 
   useEffect(() => {
     const loadProfile = async () => {
+      const cached = appCache.get<User>("me", CACHE_TTL.PERSONAL);
+      if (cached) return;
       try {
         const fresh = await usersService.getMe();
-        setUser(fresh);
-        localStorage.setItem("user", JSON.stringify(fresh));
+
+        const s3Path = (url?: string | null) => url?.split("?")[0] ?? "";
+        const merged: User =
+          user?.avatarUrl && s3Path(user.avatarUrl) === s3Path(fresh.avatarUrl)
+            ? { ...fresh, avatarUrl: user.avatarUrl }
+            : fresh;
+        appCache.set("me", merged);
+        setUser(merged);
+        localStorage.setItem("user", JSON.stringify(merged));
       } catch {
         // keep stale context data on error
       }
@@ -235,6 +265,7 @@ export default function Profile() {
     loadProfile();
     loadGames();
     loadGifts();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setUser]);
 
   const gameTypeLabel: Record<GameResponse["type"], string> = {
@@ -355,11 +386,17 @@ export default function Profile() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-40">
-                  <DropdownMenuItem onClick={handleEdit} className="cursor-pointer">
+                  <DropdownMenuItem
+                    onClick={handleEdit}
+                    className="cursor-pointer"
+                  >
                     <Pencil className="size-4 mr-2" /> Edit profile
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive focus:text-destructive">
+                  <DropdownMenuItem
+                    onClick={handleLogout}
+                    className="cursor-pointer text-destructive focus:text-destructive"
+                  >
                     <LogOut className="size-4 mr-2" /> Log out
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -420,13 +457,17 @@ export default function Profile() {
                           className={`w-full h-full object-cover${game.isDeleted ? " opacity-60" : ""}`}
                         />
                       ) : (
-                        <div className={`w-full h-full bg-linear-to-br from-primary/20 to-primary/5 p-4${game.isDeleted ? " opacity-60" : ""}`}>
+                        <div
+                          className={`w-full h-full bg-linear-to-br from-primary/20 to-primary/5 p-4${game.isDeleted ? " opacity-60" : ""}`}
+                        >
                           <p className="text-4xl">{gameEmoji[game.type]}</p>
                         </div>
                       )}
                       <div className="absolute top-3 right-3 flex items-center gap-1.5">
                         {game.isDeleted && (
-                          <Badge variant="destructive" className="text-xs">Deleted</Badge>
+                          <Badge variant="destructive" className="text-xs">
+                            Deleted
+                          </Badge>
                         )}
                         <Badge variant="secondary" className="text-xs">
                           {visibilityLabel[game.visibility]}
@@ -436,7 +477,9 @@ export default function Profile() {
 
                     <div className="p-3 flex flex-col gap-2">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="font-medium text-sm truncate">{game.title}</span>
+                        <span className="font-medium text-sm truncate">
+                          {game.title}
+                        </span>
                         <Badge variant="outline" className="text-[10px]">
                           {gameTypeLabel[game.type]}
                         </Badge>
@@ -464,25 +507,43 @@ export default function Profile() {
                       <div className="flex items-center gap-2 pt-1 border-t border-border/50">
                         {game.isDeleted ? (
                           <button
-                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleRestoreGame(game.gameId); }}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleRestoreGame(game.gameId);
+                            }}
                             disabled={restoringGameId === game.gameId}
                             className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
                           >
                             <Undo2 className="size-3" />
-                            {restoringGameId === game.gameId ? "Restoring..." : "Restore"}
+                            {restoringGameId === game.gameId
+                              ? "Restoring..."
+                              : "Restore"}
                           </button>
                         ) : confirmingDeleteId === game.gameId ? (
                           <div className="flex items-center gap-2">
-                            <span className="text-[10px] text-destructive font-medium">Delete this game?</span>
+                            <span className="text-[10px] text-destructive font-medium">
+                              Delete this game?
+                            </span>
                             <button
-                              onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteGame(game.gameId); }}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleDeleteGame(game.gameId);
+                              }}
                               disabled={deletingGameId === game.gameId}
                               className="text-[10px] font-semibold text-destructive hover:underline disabled:opacity-50"
                             >
-                              {deletingGameId === game.gameId ? "Deleting..." : "Yes, delete"}
+                              {deletingGameId === game.gameId
+                                ? "Deleting..."
+                                : "Yes, delete"}
                             </button>
                             <button
-                              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmingDeleteId(null); }}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setConfirmingDeleteId(null);
+                              }}
                               className="text-[10px] text-muted-foreground hover:text-foreground"
                             >
                               Cancel
@@ -490,7 +551,11 @@ export default function Profile() {
                           </div>
                         ) : (
                           <button
-                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmingDeleteId(game.gameId); }}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setConfirmingDeleteId(game.gameId);
+                            }}
                             className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-destructive transition-colors ml-auto"
                           >
                             <Trash2 className="size-3" />
@@ -527,10 +592,14 @@ export default function Profile() {
         ) : giftsError ? (
           <div className="space-y-3">
             <p className="text-sm text-destructive">{giftsError}</p>
-            <Button variant="outline" onClick={() => loadGifts()}>Retry</Button>
+            <Button variant="outline" onClick={() => loadGifts()}>
+              Retry
+            </Button>
           </div>
         ) : gifts.length === 0 ? (
-          <p className="text-sm text-muted-foreground">You have not generated any gifts yet.</p>
+          <p className="text-sm text-muted-foreground">
+            You have not generated any gifts yet.
+          </p>
         ) : (
           <div className="space-y-4">
             <div className="flex flex-col gap-2">
@@ -544,7 +613,10 @@ export default function Profile() {
                     <div className="min-w-0">
                       <p className="text-sm font-medium truncate">
                         For {gift.recipientName}
-                        <span className="text-muted-foreground font-normal"> · {gift.occasion}</span>
+                        <span className="text-muted-foreground font-normal">
+                          {" "}
+                          · {gift.occasion}
+                        </span>
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {new Date(gift.createdAt).toLocaleDateString()}
@@ -560,7 +632,9 @@ export default function Profile() {
                       </Badge>
                     )}
                     {gift.status === "ERROR" && (
-                      <Badge variant="destructive" className="text-xs">Failed</Badge>
+                      <Badge variant="destructive" className="text-xs">
+                        Failed
+                      </Badge>
                     )}
                     {gift.status === "READY" && (
                       <Link

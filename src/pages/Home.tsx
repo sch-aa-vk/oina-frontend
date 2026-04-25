@@ -3,6 +3,7 @@ import { Eye, Sparkles, TrendingUp, Heart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { appCache, CACHE_TTL } from "@/lib/cache";
 import { useAuth } from "@/contexts/AuthContext";
 import { gamesService } from "@/services/games";
 import type { GameSummaryResponse, GameType, SortBy } from "@/types/games";
@@ -142,29 +143,35 @@ function SectionHeader({
 export default function Home() {
   const { isAuthenticated } = useAuth();
 
-  const [publicGames, setPublicGames] = useState<GameSummaryResponse[]>([]);
-  const [publicGamesNextCursor, setPublicGamesNextCursor] = useState<string | undefined>();
-  const [isLoadingPublicGames, setIsLoadingPublicGames] = useState(true);
-  const [publicGamesError, setPublicGamesError] = useState("");
-  const [isLoadingMorePublicGames, setIsLoadingMorePublicGames] = useState(false);
-
   const [sortBy, setSortBy] = useState<SortBy>("popular");
   const [typeFilter] = useState<GameType | undefined>(undefined);
+
+  const cacheKey = `public-games:${sortBy}`;
+  const cachedGames = appCache.get<GameSummaryResponse[]>(cacheKey, CACHE_TTL.PUBLIC);
+
+  const [publicGames, setPublicGames] = useState<GameSummaryResponse[]>(cachedGames ?? []);
+  const [publicGamesNextCursor, setPublicGamesNextCursor] = useState<string | undefined>();
+  const [isLoadingPublicGames, setIsLoadingPublicGames] = useState(!cachedGames);
+  const [publicGamesError, setPublicGamesError] = useState("");
+  const [isLoadingMorePublicGames, setIsLoadingMorePublicGames] = useState(false);
 
   const [likedGames, setLikedGames] = useState<Record<string, boolean>>({});
   const [localLikeCounts, setLocalLikeCounts] = useState<Record<string, number>>({});
   const [likingGameId, setLikingGameId] = useState<string | null>(null);
 
-  const loadPublicGames = async (cursor?: string) => {
+  const loadPublicGames = async (cursor?: string, overrideSortBy = sortBy) => {
+    const key = `public-games:${overrideSortBy}`;
     if (cursor) {
       setIsLoadingMorePublicGames(true);
-    } else {
+    } else if (!appCache.get(key, CACHE_TTL.PUBLIC)) {
       setIsLoadingPublicGames(true);
     }
     setPublicGamesError("");
     try {
-      const res = await gamesService.listPublicGames({ sortBy, type: typeFilter, cursor });
-      setPublicGames((prev) => cursor ? [...prev, ...res.games] : res.games);
+      const res = await gamesService.listPublicGames({ sortBy: overrideSortBy, type: typeFilter, cursor });
+      const updated = cursor ? [...publicGames, ...res.games] : res.games;
+      setPublicGames(updated);
+      if (!cursor) appCache.set(key, updated);
       setPublicGamesNextCursor(res.nextCursor);
       setLocalLikeCounts((prev) => {
         const next = { ...prev };
@@ -180,9 +187,17 @@ export default function Home() {
   };
 
   useEffect(() => {
-    setPublicGames([]);
+    const key = `public-games:${sortBy}`;
+    const cached = appCache.get<GameSummaryResponse[]>(key, CACHE_TTL.PUBLIC);
+    
+    if (cached) {
+      setPublicGames(cached);
+      setIsLoadingPublicGames(false);
+    } else {
+      setIsLoadingPublicGames(true);
+    }
     setPublicGamesNextCursor(undefined);
-    loadPublicGames();
+    loadPublicGames(undefined, sortBy);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sortBy, typeFilter]);
 

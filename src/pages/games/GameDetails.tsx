@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { requestHistoryRefresh } from "@/lib/cache";
 import { gamesService } from "@/services/games";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -40,13 +41,20 @@ export default function GameDetails() {
       if (!isAuthenticated || game?.visibility === "draft") return;
       const duration = Date.now() - startedAt.current;
       gamesService
-        .recordGameResult(gameId, { score, maxScore: total, duration, completionStatus: "completed" })
+        .recordGameResult(gameId, {
+          score,
+          maxScore: total,
+          duration,
+          completionStatus: "completed",
+        })
+        .then(() => {
+          requestHistoryRefresh();
+        })
         .catch(() => {});
     },
-    [gameId, isAuthenticated, game?.visibility]
+    [gameId, isAuthenticated, game?.visibility],
   );
 
-  // TODO: isLiked cannot be determined from API response — initialised to false on every mount
   const [isLiked, setIsLiked] = useState(false);
   const [localLikeCount, setLocalLikeCount] = useState(0);
   const [isLiking, setIsLiking] = useState(false);
@@ -78,7 +86,7 @@ export default function GameDetails() {
             }
             setGame(previewGame);
             setState("ready");
-            // No view tracking for draft previews
+
             return;
           } catch (previewError) {
             const parsed = gamesService.mapError(previewError);
@@ -92,9 +100,10 @@ export default function GameDetails() {
         setState("ready");
         setLocalLikeCount(baseGame.likeCount);
 
-        // Fire-and-forget — do not await, do not show errors
         if (baseGame.visibility !== "draft") {
-          gamesService.trackView(gameId).catch(() => {/* silently ignore */});
+          gamesService.trackView(gameId).catch(() => {
+            /* silently ignore */
+          });
         }
       } catch (error) {
         if (!active) {
@@ -145,8 +154,11 @@ export default function GameDetails() {
       setIsLiked(wasLiked);
       setLocalLikeCount((c) => c + (wasLiked ? 1 : -1));
       const parsed = gamesService.mapError(err);
-      // GAME_ALREADY_LIKED / GAME_NOT_LIKED mean state was already correct — sync silently
-      if (parsed.code !== "GAME_ALREADY_LIKED" && parsed.code !== "GAME_NOT_LIKED") {
+
+      if (
+        parsed.code !== "GAME_ALREADY_LIKED" &&
+        parsed.code !== "GAME_NOT_LIKED"
+      ) {
         setLikeError(parsed.message);
       } else {
         setIsLiked(parsed.code === "GAME_ALREADY_LIKED");
@@ -170,7 +182,7 @@ export default function GameDetails() {
 
     if (gameType === "choose-me") {
       const questions = (content.questions as Question[]) || [];
-      const settings = content.settings as { shuffle?: boolean } || {};
+      const settings = (content.settings as { shuffle?: boolean }) || {};
       return (
         <ChooseMeGamePlay
           questions={questions}
@@ -184,7 +196,7 @@ export default function GameDetails() {
 
     if (gameType === "guess-by-emoji") {
       const puzzles = (content.puzzles as EmojiPuzzle[]) || [];
-      const settings = content.settings as { showAnswers?: boolean } || {};
+      const settings = (content.settings as { showAnswers?: boolean }) || {};
       return (
         <GuessByEmojiGamePlay
           puzzles={puzzles}
@@ -198,7 +210,7 @@ export default function GameDetails() {
 
     if (gameType === "crossword") {
       const words = (content.words as CrosswordWord[]) || [];
-      const settings = content.settings as { showSolution?: boolean } || {};
+      const settings = (content.settings as { showSolution?: boolean }) || {};
       const grid = buildCrosswordGrid(words);
 
       if (!grid) {
@@ -239,7 +251,7 @@ export default function GameDetails() {
               "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium shadow-lg border transition-colors",
               isLiked
                 ? "bg-rose-500 text-white border-rose-500 hover:bg-rose-600"
-                : "bg-background text-muted-foreground border-border hover:text-rose-500 hover:border-rose-300"
+                : "bg-background text-muted-foreground border-border hover:text-rose-500 hover:border-rose-300",
             )}
             title={!isAuthenticated ? "Sign in to like games" : undefined}
           >

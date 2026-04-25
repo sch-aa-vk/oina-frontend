@@ -34,7 +34,6 @@ export function PreviewModalShell({
           maxWidth
         )}
       >
-        {/* Header */}
         <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm px-4 sm:px-6 py-3 sm:py-4 border-b border-border flex items-center justify-between gap-2">
           <div className="min-w-0">
             <p className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider">
@@ -52,7 +51,6 @@ export function PreviewModalShell({
           </Badge>
         </div>
 
-        {/* Personal message — only shown on first item */}
         {personalMessage && showMessage && (
           <div
             className={cn(
@@ -80,10 +78,8 @@ export function PreviewModalShell({
           </div>
         )}
 
-        {/* Game-specific content */}
         {children}
 
-        {/* Progress bar */}
         <div className="px-4 sm:px-6 pb-2.5 sm:pb-3">
           <div className="w-full h-1 sm:h-1.5 bg-muted rounded-full overflow-hidden">
             <div
@@ -96,7 +92,6 @@ export function PreviewModalShell({
           </div>
         </div>
 
-        {/* Close button */}
         <div className="px-4 sm:px-6 pb-4 sm:pb-5">
           <Button
             variant="outline"

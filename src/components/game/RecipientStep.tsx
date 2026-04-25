@@ -40,7 +40,6 @@ export function RecipientStep({
 }: RecipientStepProps) {
   return (
     <>
-      {/* Heading */}
       <div className="space-y-1">
         <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
           {heading}
@@ -48,9 +47,7 @@ export function RecipientStep({
         <p className="text-muted-foreground text-xs sm:text-sm">{subheading}</p>
       </div>
 
-      {/* Form card */}
       <div className="rounded-2xl sm:rounded-3xl border border-border bg-background p-4 sm:p-6 space-y-4 sm:space-y-6 shadow-sm">
-        {/* Name */}
         <div className="space-y-1.5 sm:space-y-2">
           <label className="text-xs sm:text-sm font-medium flex items-center gap-1.5 sm:gap-2">
             <User className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground" />
@@ -66,7 +63,6 @@ export function RecipientStep({
           />
         </div>
 
-        {/* Occasion pills */}
         <div className="space-y-1.5 sm:space-y-2">
           <label className="text-xs sm:text-sm font-medium flex items-center gap-1.5 sm:gap-2">
             <Gift className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground" />
@@ -82,7 +78,7 @@ export function RecipientStep({
                   "px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm border transition-colors",
                   recipient.occasion === o
                     ? "bg-primary text-primary-foreground border-primary"
-                    : "border-border hover:border-primary/50 hover:bg-primary/5"
+                    : "border-border hover:border-primary/50 hover:bg-primary/5",
                 )}
               >
                 {o}
@@ -91,7 +87,6 @@ export function RecipientStep({
           </div>
         </div>
 
-        {/* Personal message */}
         <div className="space-y-1.5 sm:space-y-2">
           <label className="text-xs sm:text-sm font-medium flex items-center gap-1.5 sm:gap-2">
             <MessageCircleHeart className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground" />
@@ -116,19 +111,18 @@ export function RecipientStep({
         </div>
       </div>
 
-      {/* AI teaser */}
       <div
         className={cn(
           "rounded-2xl sm:rounded-3xl border p-4 sm:p-6 bg-linear-to-br",
           theme.teaserBorder,
-          theme.teaserBg
+          theme.teaserBg,
         )}
       >
         <div className="flex items-start gap-3 sm:gap-4">
           <div
             className={cn(
               "w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-linear-to-br flex items-center justify-center shrink-0 mt-0.5",
-              theme.teaserIcon
+              theme.teaserIcon,
             )}
           >
             <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
@@ -137,7 +131,7 @@ export function RecipientStep({
             <p
               className={cn(
                 "font-semibold text-xs sm:text-sm mb-0.5 sm:mb-1 leading-snug",
-                theme.teaserTitle
+                theme.teaserTitle,
               )}
             >
               {aiTeaserTitle}
@@ -145,7 +139,7 @@ export function RecipientStep({
             <p
               className={cn(
                 "text-xs sm:text-sm leading-snug",
-                theme.teaserBody
+                theme.teaserBody,
               )}
             >
               {aiTeaserBody}
@@ -154,7 +148,6 @@ export function RecipientStep({
         </div>
       </div>
 
-      {/* Continue */}
       <div className="flex justify-end">
         <Button
           onClick={onContinue}

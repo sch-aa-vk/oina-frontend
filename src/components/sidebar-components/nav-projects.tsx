@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Gift, Grid3x3, Smile, Sparkles, User2Icon, Users } from "lucide-react";
+import { appCache, CACHE_TTL, onHistoryRefresh } from "@/lib/cache";
 
 import {
   SidebarGroup,
@@ -19,47 +20,56 @@ import { NavLink, useNavigate } from "react-router-dom";
 export function NavProjects() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [history, setHistory] = useState<GameResultResponse[]>([]);
-  const [isLoadingGames, setIsLoadingGames] = useState(false);
+
+  const cached = user ? appCache.get<GameResultResponse[]>("game-history", CACHE_TTL.PERSONAL) : null;
+  const [history, setHistory] = useState<GameResultResponse[]>(cached ?? []);
+  const [isLoadingGames, setIsLoadingGames] = useState(!cached && !!user);
   const [gamesError, setGamesError] = useState("");
 
-  useEffect(() => {
-    let isMounted = true;
+  const loadHistory = useCallback(
+    async (forceNetwork = false) => {
+      if (!user) {
+        setHistory([]);
+        setGamesError("");
+        setIsLoadingGames(false);
+        return;
+      }
 
-    if (!user) {
-      setHistory([]);
-      setGamesError("");
-      setIsLoadingGames(false);
-      return;
-    }
+      const cachedHistory = appCache.get<GameResultResponse[]>("game-history", CACHE_TTL.PERSONAL);
 
-    const loadHistory = async () => {
-      setIsLoadingGames(true);
+      if (!forceNetwork && cachedHistory) {
+        setHistory(cachedHistory);
+        setGamesError("");
+        setIsLoadingGames(false);
+        return;
+      }
 
+      setIsLoadingGames(!cachedHistory);
       try {
         setGamesError("");
         const response = await gamesService.getGameHistory();
-        if (isMounted) {
-          setHistory(response.results);
-        }
+        appCache.set("game-history", response.results);
+        setHistory(response.results);
       } catch (error) {
         const parsed = gamesService.mapError(error);
-        if (isMounted) {
-          setGamesError(parsed.message);
-        }
+        setGamesError(parsed.message);
       } finally {
-        if (isMounted) {
-          setIsLoadingGames(false);
-        }
+        setIsLoadingGames(false);
       }
-    };
+    },
+    [user],
+  );
 
-    loadHistory();
+  useEffect(() => {
+    loadHistory(false);
+  }, [loadHistory, user?.userId]);
 
-    return () => {
-      isMounted = false;
-    };
-  }, [user]);
+  useEffect(() => {
+    return onHistoryRefresh(() => {
+      if (!user) return;
+      void loadHistory(true);
+    });
+  }, [loadHistory, user]);
 
   if (!user) {
     return (

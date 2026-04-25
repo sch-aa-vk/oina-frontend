@@ -68,7 +68,6 @@ export function EmojiSequenceBuilder({
             className="group relative flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 text-xl sm:text-2xl rounded-lg sm:rounded-xl bg-background border border-border shadow-sm hover:border-primary/40 transition-all"
           >
             <span className="select-none">{e}</span>
-            {/* Reorder controls — hidden on touch, visible on hover */}
             <div className="absolute -top-1 -right-1 hidden group-hover:flex flex-col gap-px">
               <button
                 type="button"
@@ -87,7 +86,6 @@ export function EmojiSequenceBuilder({
                 <ChevronDown className="w-2.5 h-2.5" />
               </button>
             </div>
-            {/* Remove button — always visible on mobile via opacity, hover on desktop */}
             <button
               type="button"
               onClick={() => removeEmoji(i)}
