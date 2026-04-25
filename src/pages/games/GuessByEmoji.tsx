@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Lightbulb } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Lightbulb, ImageIcon, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -48,6 +48,12 @@ export default function GuessByEmoji() {
   const [draftGameId, setDraftGameId] = useState<string | null>(null);
   const [isAiLoading, setIsAiLoading] = useState<boolean>(false);
   const [aiError, setAiError] = useState<string | null>(null);
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [coverPreviewUrl, setCoverPreviewUrl] = useState<string | null>(null);
+
+  useEffect(() => () => {
+    if (coverPreviewUrl) URL.revokeObjectURL(coverPreviewUrl);
+  }, [coverPreviewUrl]);
 
   const updatePuzzle = (id: string, changes: Partial<EmojiPuzzle>): void => {
     setPuzzles((prev) =>
@@ -131,9 +137,16 @@ export default function GuessByEmoji() {
           return;
         }
 
-        const draft = await gamesService.createGame(payload);
+        const draft = await gamesService.createGame({
+          ...payload,
+          coverImageContentType: coverFile ? coverFile.type : undefined,
+        });
         gameIdForPublish = draft.gameId;
         setDraftGameId(gameIdForPublish);
+
+        if (coverFile && draft.coverUploadUrl) {
+          await gamesService.uploadGameCover(draft.coverUploadUrl, coverFile);
+        }
       }
 
       const published = await gamesService.publishGame(
@@ -362,6 +375,38 @@ export default function GuessByEmoji() {
                 recipient.name || "them"
               }`}
             >
+              <div className="space-y-1.5 sm:space-y-2">
+                <label className="text-xs sm:text-sm font-medium">Cover image <span className="text-muted-foreground font-normal">(optional)</span></label>
+                {coverPreviewUrl ? (
+                  <div className="relative rounded-xl overflow-hidden h-32">
+                    <img src={coverPreviewUrl} alt="Cover preview" className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => { setCoverFile(null); setCoverPreviewUrl(null); }}
+                      className="absolute top-2 right-2 bg-background/80 rounded-full p-1 hover:bg-background transition-colors"
+                    >
+                      <X className="size-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <label className="flex flex-col items-center justify-center h-24 rounded-xl border-2 border-dashed border-border cursor-pointer hover:border-primary/50 transition-colors">
+                    <ImageIcon className="size-5 text-muted-foreground mb-1" />
+                    <span className="text-xs text-muted-foreground">Click to upload</span>
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        setCoverFile(file);
+                        setCoverPreviewUrl(URL.createObjectURL(file));
+                        e.target.value = "";
+                      }}
+                    />
+                  </label>
+                )}
+              </div>
               <ToggleSetting
                 icon={Lightbulb}
                 label="Allow answer reveal after a miss"

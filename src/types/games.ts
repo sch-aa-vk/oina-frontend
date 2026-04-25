@@ -42,6 +42,9 @@ export interface GameResponse {
   createdAt: string;
   updatedAt: string;
   currentVersion: number;
+  coverUploadUrl?: string;
+  isDeleted?: boolean;
+  deletedAt?: string;
 }
 
 export interface CreateGameRequest {
@@ -51,7 +54,35 @@ export interface CreateGameRequest {
   category?: string;
   tags?: string[];
   content: GameContent;
+  coverImageContentType?: string;
 }
+
+export interface GameSummaryResponse {
+  gameId: string;
+  userId: string;
+  type: GameType;
+  title: string;
+  description?: string;
+  thumbnail?: string;
+  category?: string;
+  tags?: string[];
+  visibility: GameVisibility;
+  publishedAt?: string;
+  shareLink?: string;
+  viewCount: number;
+  playCount: number;
+  likeCount: number;
+  createdAt: string;
+  updatedAt: string;
+  authorName?: string;
+}
+
+export interface PublicGamesListResponse {
+  games: GameSummaryResponse[];
+  nextCursor?: string;
+}
+
+export type SortBy = "newest" | "popular";
 
 export interface ListGamesResponse {
   games: GameResponse[];

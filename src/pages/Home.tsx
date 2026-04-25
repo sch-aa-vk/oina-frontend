@@ -1,8 +1,12 @@
-import { Plus, Eye, Sparkles, TrendingUp, Layers } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Plus, Eye, Sparkles, TrendingUp, Layers, Heart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
+import { useAuth } from "@/contexts/AuthContext";
+import { gamesService } from "@/services/games";
+import type { GameSummaryResponse, GameType, SortBy } from "@/types/games";
 
 
 interface TemplateGame {
@@ -15,17 +19,6 @@ interface TemplateGame {
   accentBg: string;
   tag: string;
 }
-
-interface TrendingGame {
-  id: number;
-  name: string;
-  author: string;
-  emoji: string;
-  plays: number;
-  gradient: string;
-  image?: string;
-}
-
 
 const templateGames: TemplateGame[] = [
   {
@@ -72,56 +65,17 @@ const templateGames: TemplateGame[] = [
   },
 ];
 
-const trendingGames: TrendingGame[] = [
-  {
-    id: 1,
-    name: "Choose Me",
-    author: "john_dev",
-    emoji: "🎯",
-    plays: 1243,
-    gradient: "from-violet-500 to-indigo-500",
-  },
-  {
-    id: 2,
-    name: "Guess by Emoji",
-    author: "anna_k",
-    emoji: "😄",
-    plays: 987,
-    gradient: "from-amber-500 to-rose-500",
-  },
-  {
-    id: 3,
-    name: "Crossword",
-    author: "mike_g",
-    emoji: "📝",
-    plays: 754,
-    gradient: "from-emerald-500 to-teal-500",
-  },
-  {
-    id: 4,
-    name: "Choose Me",
-    author: "sarah_m",
-    emoji: "🎯",
-    plays: 622,
-    gradient: "from-pink-500 to-rose-500",
-  },
-  {
-    id: 5,
-    name: "Guess by Emoji",
-    author: "leo_x",
-    emoji: "😄",
-    plays: 489,
-    gradient: "from-sky-500 to-blue-500",
-  },
-  {
-    id: 6,
-    name: "Crossword",
-    author: "priya_s",
-    emoji: "📝",
-    plays: 401,
-    gradient: "from-purple-500 to-violet-500",
-  },
-];
+const gameEmoji: Record<GameType, string> = {
+  "choose-me": "🎯",
+  "guess-by-emoji": "😄",
+  crossword: "📝",
+};
+
+const gradientByType: Record<GameType, string> = {
+  "choose-me": "from-violet-500 to-indigo-500",
+  "guess-by-emoji": "from-amber-500 to-rose-500",
+  crossword: "from-emerald-500 to-teal-500",
+};
 
 
 function TemplateCard({ game }: { game: TemplateGame }) {
@@ -199,18 +153,27 @@ function TemplateCard({ game }: { game: TemplateGame }) {
 }
 
 
-function TrendingCard({ game }: { game: TrendingGame }) {
+function PublicGameCard({
+  game,
+  isLiked,
+  likeCount,
+  isLiking,
+  onToggleLike,
+  isAuthenticated,
+}: {
+  game: GameSummaryResponse;
+  isLiked: boolean;
+  likeCount: number;
+  isLiking: boolean;
+  onToggleLike: (gameId: string) => void;
+  isAuthenticated: boolean;
+}) {
   const navigate = useNavigate();
-
-  const formattedPlays =
-    game.plays >= 1000
-      ? `${(game.plays / 1000).toFixed(1)}k`
-      : game.plays.toString();
 
   return (
     <div className="group flex flex-col gap-2 sm:gap-3">
       <div
-        onClick={() => navigate(`/games/${game.id}`)}
+        onClick={() => navigate(`/games/${game.gameId}`)}
         className={cn(
           "relative h-28 sm:h-40 rounded-xl sm:rounded-2xl overflow-hidden cursor-pointer transition-all duration-300",
           "ring-1 ring-black/5 dark:ring-white/5",
@@ -218,35 +181,30 @@ function TrendingCard({ game }: { game: TrendingGame }) {
           "active:scale-[0.98] sm:active:scale-100"
         )}
       >
-        <div
-          className={cn(
-            "absolute inset-0 bg-linear-to-br opacity-60",
-            game.gradient
-          )}
-        />
-        <div className="absolute inset-0 bg-muted/40 dark:bg-muted/60" />
-
-        <div className="absolute inset-0 flex items-center justify-center text-3xl sm:text-5xl select-none opacity-60 group-hover:opacity-40 transition-opacity">
-          {game.emoji}
-        </div>
+        {game.thumbnail ? (
+          <img src={game.thumbnail} alt={game.title} className="absolute inset-0 w-full h-full object-cover" />
+        ) : (
+          <>
+            <div className={cn("absolute inset-0 bg-linear-to-br opacity-60", gradientByType[game.type])} />
+            <div className="absolute inset-0 bg-muted/40 dark:bg-muted/60" />
+            <div className="absolute inset-0 flex items-center justify-center text-3xl sm:text-5xl select-none opacity-60 group-hover:opacity-40 transition-opacity">
+              {gameEmoji[game.type]}
+            </div>
+          </>
+        )}
 
         <div className="absolute top-2 sm:top-3 right-2 sm:right-3">
           <span className="flex items-center gap-0.5 sm:gap-1 text-[10px] sm:text-xs font-medium px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full bg-background/70 backdrop-blur-sm text-muted-foreground">
             <TrendingUp className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-            {formattedPlays}
+            {game.playCount >= 1000 ? `${(game.playCount / 1000).toFixed(1)}k` : game.playCount}
           </span>
         </div>
 
         <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hidden sm:block" />
-
         <div className="absolute inset-0 items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-all duration-200 hidden sm:flex">
           <button
-            onClick={(e) => {
-              e.stopPropagation();
-              navigate(`/games/${game.id}`);
-            }}
+            onClick={(e) => { e.stopPropagation(); navigate(`/games/${game.gameId}`); }}
             className="flex items-center gap-2 bg-white text-gray-900 font-semibold text-sm px-4 py-2.5 rounded-full shadow-lg hover:scale-105 transition-transform"
-            aria-label={`View ${game.name}`}
           >
             <Eye className="w-4 h-4" />
             Preview
@@ -256,13 +214,21 @@ function TrendingCard({ game }: { game: TrendingGame }) {
 
       <div className="px-0.5 flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="text-xs sm:text-sm font-semibold truncate">
-            {game.name}
-          </p>
-          <p className="text-[10px] sm:text-xs text-muted-foreground">
-            by {game.author}
-          </p>
+          <p className="text-xs sm:text-sm font-semibold truncate">{game.title}</p>
+          <p className="text-[10px] sm:text-xs text-muted-foreground">by @{game.authorName}</p>
         </div>
+        <button
+          onClick={(e) => { e.stopPropagation(); onToggleLike(game.gameId); }}
+          disabled={!isAuthenticated || isLiking}
+          title={!isAuthenticated ? "Sign in to like" : undefined}
+          className={cn(
+            "flex items-center gap-1 shrink-0 text-[10px] sm:text-xs transition-colors disabled:opacity-50",
+            isLiked ? "text-rose-500" : "text-muted-foreground hover:text-rose-400"
+          )}
+        >
+          <Heart className={cn("size-3", isLiked && "fill-current")} />
+          {likeCount}
+        </button>
       </div>
     </div>
   );
@@ -309,6 +275,80 @@ function SectionHeader({
 
 
 export default function Home() {
+  const { isAuthenticated } = useAuth();
+
+  const [publicGames, setPublicGames] = useState<GameSummaryResponse[]>([]);
+  const [publicGamesNextCursor, setPublicGamesNextCursor] = useState<string | undefined>();
+  const [isLoadingPublicGames, setIsLoadingPublicGames] = useState(true);
+  const [publicGamesError, setPublicGamesError] = useState("");
+  const [isLoadingMorePublicGames, setIsLoadingMorePublicGames] = useState(false);
+
+  const [sortBy, setSortBy] = useState<SortBy>("popular");
+  const [typeFilter] = useState<GameType | undefined>(undefined);
+
+  const [likedGames, setLikedGames] = useState<Record<string, boolean>>({});
+  const [localLikeCounts, setLocalLikeCounts] = useState<Record<string, number>>({});
+  const [likingGameId, setLikingGameId] = useState<string | null>(null);
+
+  const loadPublicGames = async (cursor?: string) => {
+    if (cursor) {
+      setIsLoadingMorePublicGames(true);
+    } else {
+      setIsLoadingPublicGames(true);
+    }
+    setPublicGamesError("");
+    try {
+      const res = await gamesService.listPublicGames({ sortBy, type: typeFilter, cursor });
+      setPublicGames((prev) => cursor ? [...prev, ...res.games] : res.games);
+      setPublicGamesNextCursor(res.nextCursor);
+      setLocalLikeCounts((prev) => {
+        const next = { ...prev };
+        res.games.forEach((g) => { if (!(g.gameId in next)) next[g.gameId] = g.likeCount; });
+        return next;
+      });
+    } catch (err) {
+      setPublicGamesError(gamesService.mapError(err).message);
+    } finally {
+      setIsLoadingPublicGames(false);
+      setIsLoadingMorePublicGames(false);
+    }
+  };
+
+  useEffect(() => {
+    setPublicGames([]);
+    setPublicGamesNextCursor(undefined);
+    loadPublicGames();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sortBy, typeFilter]);
+
+  const handleToggleLike = async (gameId: string) => {
+    if (!isAuthenticated || likingGameId) return;
+    setLikingGameId(gameId);
+
+    const wasLiked = likedGames[gameId] ?? false;
+    setLikedGames((prev) => ({ ...prev, [gameId]: !wasLiked }));
+    setLocalLikeCounts((prev) => ({ ...prev, [gameId]: (prev[gameId] ?? 0) + (wasLiked ? -1 : 1) }));
+
+    try {
+      if (wasLiked) {
+        await gamesService.unlikeGame(gameId);
+      } else {
+        await gamesService.likeGame(gameId);
+      }
+    } catch (err) {
+      setLikedGames((prev) => ({ ...prev, [gameId]: wasLiked }));
+      setLocalLikeCounts((prev) => ({ ...prev, [gameId]: (prev[gameId] ?? 0) + (wasLiked ? 1 : -1) }));
+      const parsed = gamesService.mapError(err);
+      if (parsed.code === "GAME_ALREADY_LIKED") {
+        setLikedGames((prev) => ({ ...prev, [gameId]: true }));
+      } else if (parsed.code === "GAME_NOT_LIKED") {
+        setLikedGames((prev) => ({ ...prev, [gameId]: false }));
+      }
+    } finally {
+      setLikingGameId(null);
+    }
+  };
+
   return (
     <div className="space-y-4 sm:space-y-6 pb-6 sm:pb-8">
       <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden bg-linear-to-br from-violet-600 via-purple-600 to-pink-600 p-4 sm:p-6 text-white">
@@ -347,17 +387,63 @@ export default function Home() {
       </section>
 
       <section className="rounded-xl sm:rounded-2xl bg-muted/40 dark:bg-muted/20 p-3 sm:p-5">
-        <SectionHeader
-          icon={TrendingUp}
-          title="Trending"
-          subtitle="Games others are playing right now"
-          badge="Community"
-        />
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-4">
-          {trendingGames.map((game) => (
-            <TrendingCard key={game.id} game={game} />
-          ))}
+        <div className="flex items-start justify-between gap-3 sm:gap-4 mb-3.5 sm:mb-5">
+          <SectionHeader
+            icon={TrendingUp}
+            title="Trending"
+            subtitle="Games others are playing right now"
+            badge="Community"
+          />
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              onClick={() => setSortBy("popular")}
+              className={cn("text-[10px] px-2 py-1 rounded-full border transition-colors",
+                sortBy === "popular"
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "border-border text-muted-foreground hover:border-primary/50")}
+            >Popular</button>
+            <button
+              onClick={() => setSortBy("newest")}
+              className={cn("text-[10px] px-2 py-1 rounded-full border transition-colors",
+                sortBy === "newest"
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "border-border text-muted-foreground hover:border-primary/50")}
+            >Newest</button>
+          </div>
         </div>
+
+        {isLoadingPublicGames ? (
+          <p className="text-xs text-muted-foreground py-4 text-center">Loading games...</p>
+        ) : publicGamesError ? (
+          <p className="text-xs text-destructive">{publicGamesError}</p>
+        ) : publicGames.length === 0 ? (
+          <p className="text-xs text-muted-foreground py-4 text-center">No public games yet.</p>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-4">
+              {publicGames.map((game) => (
+                <PublicGameCard
+                  key={game.gameId}
+                  game={game}
+                  isLiked={likedGames[game.gameId] ?? false}
+                  likeCount={localLikeCounts[game.gameId] ?? game.likeCount}
+                  isLiking={likingGameId === game.gameId}
+                  onToggleLike={handleToggleLike}
+                  isAuthenticated={isAuthenticated}
+                />
+              ))}
+            </div>
+            {publicGamesNextCursor && (
+              <button
+                onClick={() => loadPublicGames(publicGamesNextCursor)}
+                disabled={isLoadingMorePublicGames}
+                className="mt-4 w-full text-xs text-muted-foreground hover:text-foreground transition-colors py-2"
+              >
+                {isLoadingMorePublicGames ? "Loading..." : "Load more"}
+              </button>
+            )}
+          </>
+        )}
       </section>
     </div>
   );

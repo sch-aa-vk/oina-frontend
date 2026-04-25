@@ -12,6 +12,8 @@ import {
   Loader2,
   LogOut,
   Settings,
+  Trash2,
+  Undo2,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -27,7 +29,9 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { gamesService } from "@/services/games";
 import { usersService } from "@/services/users";
+import { giftSiteService } from "@/services/giftSite";
 import type { AvatarContentType } from "@/services/users";
+import type { MyGiftItem } from "@/services/giftSite";
 import type { GameResponse } from "@/types/games";
 
 const ALLOWED_AVATAR_TYPES: AvatarContentType[] = [
@@ -63,6 +67,17 @@ export default function Profile() {
   const [gamesError, setGamesError] = useState<string>("");
   const [isLoadingGames, setIsLoadingGames] = useState<boolean>(true);
   const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
+
+  const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null);
+  const [deletingGameId, setDeletingGameId] = useState<string | null>(null);
+  const [restoringGameId, setRestoringGameId] = useState<string | null>(null);
+  const [gameActionError, setGameActionError] = useState<string>("");
+
+  const [gifts, setGifts] = useState<MyGiftItem[]>([]);
+  const [giftsNextCursor, setGiftsNextCursor] = useState<string | undefined>();
+  const [isLoadingGifts, setIsLoadingGifts] = useState(true);
+  const [isLoadingMoreGifts, setIsLoadingMoreGifts] = useState(false);
+  const [giftsError, setGiftsError] = useState("");
 
   async function handleLogout() {
     await logout();
@@ -134,6 +149,56 @@ export default function Profile() {
     }
   };
 
+  const handleDeleteGame = async (gameId: string) => {
+    setDeletingGameId(gameId);
+    setGameActionError("");
+    try {
+      await gamesService.deleteGame(gameId);
+      setGames((prev) =>
+        prev.map((g) =>
+          g.gameId === gameId ? { ...g, isDeleted: true, deletedAt: new Date().toISOString() } : g
+        )
+      );
+      setConfirmingDeleteId(null);
+    } catch (err) {
+      setGameActionError(gamesService.mapError(err).message);
+    } finally {
+      setDeletingGameId(null);
+    }
+  };
+
+  const handleRestoreGame = async (gameId: string) => {
+    setRestoringGameId(gameId);
+    setGameActionError("");
+    try {
+      const restored = await gamesService.restoreGame(gameId);
+      setGames((prev) => prev.map((g) => (g.gameId === gameId ? restored : g)));
+    } catch (err) {
+      setGameActionError(gamesService.mapError(err).message);
+    } finally {
+      setRestoringGameId(null);
+    }
+  };
+
+  const loadGifts = async (cursor?: string) => {
+    if (cursor) {
+      setIsLoadingMoreGifts(true);
+    } else {
+      setIsLoadingGifts(true);
+    }
+    setGiftsError("");
+    try {
+      const res = await giftSiteService.listMyGifts(cursor);
+      setGifts((prev) => cursor ? [...prev, ...res.gifts] : res.gifts);
+      setGiftsNextCursor(res.nextCursor);
+    } catch {
+      setGiftsError("Could not load gifts. Please try again.");
+    } finally {
+      setIsLoadingGifts(false);
+      setIsLoadingMoreGifts(false);
+    }
+  };
+
   const loadGames = async (cursor?: string) => {
     if (cursor) {
       setIsLoadingMore(true);
@@ -169,6 +234,7 @@ export default function Profile() {
     };
     loadProfile();
     loadGames();
+    loadGifts();
   }, [setUser]);
 
   const gameTypeLabel: Record<GameResponse["type"], string> = {
@@ -341,54 +407,106 @@ export default function Profile() {
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {games.map((game) => (
-                <Link
-                  key={game.gameId}
-                  to={`/games/${game.gameId}`}
-                  className="group rounded-xl border bg-card overflow-hidden hover:shadow-md transition-shadow"
-                >
-                  <div className="h-36 bg-linear-to-br from-primary/20 to-primary/5 relative p-4">
-                    <p className="text-4xl">{gameEmoji[game.type]}</p>
-                    <Badge
-                      variant="secondary"
-                      className="absolute top-3 right-3 text-xs"
-                    >
-                      {visibilityLabel[game.visibility]}
-                    </Badge>
-                  </div>
-
-                  <div className="p-3 flex flex-col gap-2">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="font-medium text-sm truncate">
-                        {game.title}
-                      </span>
-                      <Badge variant="outline" className="text-[10px]">
-                        {gameTypeLabel[game.type]}
-                      </Badge>
+                <div key={game.gameId} className="relative">
+                  <Link
+                    to={`/games/${game.gameId}`}
+                    className="group rounded-xl border bg-card overflow-hidden hover:shadow-md transition-shadow block"
+                  >
+                    <div className="h-36 relative overflow-hidden">
+                      {game.thumbnail ? (
+                        <img
+                          src={game.thumbnail}
+                          alt={game.title}
+                          className={`w-full h-full object-cover${game.isDeleted ? " opacity-60" : ""}`}
+                        />
+                      ) : (
+                        <div className={`w-full h-full bg-linear-to-br from-primary/20 to-primary/5 p-4${game.isDeleted ? " opacity-60" : ""}`}>
+                          <p className="text-4xl">{gameEmoji[game.type]}</p>
+                        </div>
+                      )}
+                      <div className="absolute top-3 right-3 flex items-center gap-1.5">
+                        {game.isDeleted && (
+                          <Badge variant="destructive" className="text-xs">Deleted</Badge>
+                        )}
+                        <Badge variant="secondary" className="text-xs">
+                          {visibilityLabel[game.visibility]}
+                        </Badge>
+                      </div>
                     </div>
 
-                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <Gamepad2 className="size-3" />
-                        {game.playCount}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Eye className="size-3" />
-                        {game.viewCount}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Heart className="size-3" />
-                        {game.likeCount}
-                      </span>
-                      <span className="flex items-center gap-1 ml-auto">
-                        <Clock className="size-3" />
-                        {new Date(game.updatedAt).toLocaleDateString()}
-                      </span>
+                    <div className="p-3 flex flex-col gap-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-medium text-sm truncate">{game.title}</span>
+                        <Badge variant="outline" className="text-[10px]">
+                          {gameTypeLabel[game.type]}
+                        </Badge>
+                      </div>
+
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <Gamepad2 className="size-3" />
+                          {game.playCount}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Eye className="size-3" />
+                          {game.viewCount}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Heart className="size-3" />
+                          {game.likeCount}
+                        </span>
+                        <span className="flex items-center gap-1 ml-auto">
+                          <Clock className="size-3" />
+                          {new Date(game.updatedAt).toLocaleDateString()}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-2 pt-1 border-t border-border/50">
+                        {game.isDeleted ? (
+                          <button
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleRestoreGame(game.gameId); }}
+                            disabled={restoringGameId === game.gameId}
+                            className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+                          >
+                            <Undo2 className="size-3" />
+                            {restoringGameId === game.gameId ? "Restoring..." : "Restore"}
+                          </button>
+                        ) : confirmingDeleteId === game.gameId ? (
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] text-destructive font-medium">Delete this game?</span>
+                            <button
+                              onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteGame(game.gameId); }}
+                              disabled={deletingGameId === game.gameId}
+                              className="text-[10px] font-semibold text-destructive hover:underline disabled:opacity-50"
+                            >
+                              {deletingGameId === game.gameId ? "Deleting..." : "Yes, delete"}
+                            </button>
+                            <button
+                              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmingDeleteId(null); }}
+                              className="text-[10px] text-muted-foreground hover:text-foreground"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmingDeleteId(game.gameId); }}
+                            className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-destructive transition-colors ml-auto"
+                          >
+                            <Trash2 className="size-3" />
+                            Delete
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </Link>
+                  </Link>
+                </div>
               ))}
             </div>
 
+            {gameActionError && (
+              <p className="text-sm text-destructive">{gameActionError}</p>
+            )}
             {nextCursor && (
               <Button
                 variant="outline"
@@ -396,6 +514,74 @@ export default function Profile() {
                 disabled={isLoadingMore}
               >
                 {isLoadingMore ? "Loading..." : "Load more"}
+              </Button>
+            )}
+          </div>
+        )}
+      </div>
+
+      <div>
+        <h2 className="text-lg font-semibold mb-4">My Gifts</h2>
+        {isLoadingGifts ? (
+          <p className="text-sm text-muted-foreground">Loading gifts...</p>
+        ) : giftsError ? (
+          <div className="space-y-3">
+            <p className="text-sm text-destructive">{giftsError}</p>
+            <Button variant="outline" onClick={() => loadGifts()}>Retry</Button>
+          </div>
+        ) : gifts.length === 0 ? (
+          <p className="text-sm text-muted-foreground">You have not generated any gifts yet.</p>
+        ) : (
+          <div className="space-y-4">
+            <div className="flex flex-col gap-2">
+              {gifts.map((gift) => (
+                <div
+                  key={gift.giftId}
+                  className="flex items-center justify-between gap-3 rounded-xl border bg-card px-4 py-3"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="text-xl shrink-0">🎁</span>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">
+                        For {gift.recipientName}
+                        <span className="text-muted-foreground font-normal"> · {gift.occasion}</span>
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(gift.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    {gift.status === "GENERATING" && (
+                      <Badge variant="secondary" className="text-xs gap-1">
+                        <Loader2 className="size-3 animate-spin" />
+                        Generating
+                      </Badge>
+                    )}
+                    {gift.status === "ERROR" && (
+                      <Badge variant="destructive" className="text-xs">Failed</Badge>
+                    )}
+                    {gift.status === "READY" && (
+                      <Link
+                        to={`/gift/${gift.giftId}`}
+                        className="text-xs font-medium text-primary hover:underline"
+                      >
+                        View →
+                      </Link>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {giftsNextCursor && (
+              <Button
+                variant="outline"
+                onClick={() => loadGifts(giftsNextCursor)}
+                disabled={isLoadingMoreGifts}
+              >
+                {isLoadingMoreGifts ? "Loading..." : "Load more"}
               </Button>
             )}
           </div>

@@ -4,8 +4,11 @@ import type {
   CreateGameRequest,
   GameApiError,
   GameResponse,
+  GameType,
   ListGamesResponse,
+  PublicGamesListResponse,
   PublishGameRequest,
+  SortBy,
 } from "@/types/games";
 
 type ApiErrorPayload = {
@@ -26,6 +29,9 @@ const ERROR_MESSAGES: Record<string, string> = {
   GAME_FORBIDDEN: "You do not have access to this game.",
   GAME_NOT_FOUND: "Game not found.",
   PREVIEW_ONLY_FOR_DRAFT: "Preview is available only for draft games.",
+  GAME_ALREADY_LIKED: "You have already liked this game.",
+  GAME_NOT_LIKED: "You have not liked this game.",
+  GAME_NOT_DELETED: "This game is not deleted and cannot be restored.",
 };
 
 function extractApiError(error: unknown): GameApiError {
@@ -86,6 +92,43 @@ export const gamesService = {
 
   async previewGame(gameId: string): Promise<GameResponse> {
     const response = await api.get<GameResponse>(`/games/${gameId}/preview`);
+    return response.data;
+  },
+
+  async listPublicGames(params?: {
+    sortBy?: SortBy;
+    category?: string;
+    type?: GameType;
+    cursor?: string;
+  }): Promise<PublicGamesListResponse> {
+    const response = await api.get<PublicGamesListResponse>("/games/public", { params });
+    return response.data;
+  },
+
+  async likeGame(gameId: string): Promise<void> {
+    await api.post(`/games/${gameId}/like`);
+  },
+
+  async unlikeGame(gameId: string): Promise<void> {
+    await api.delete(`/games/${gameId}/like`);
+  },
+
+  async trackView(gameId: string): Promise<void> {
+    await api.post(`/games/${gameId}/view`);
+  },
+
+  async uploadGameCover(presignedUrl: string, file: File): Promise<void> {
+    await axios.put(presignedUrl, file, {
+      headers: { "Content-Type": file.type },
+    });
+  },
+
+  async deleteGame(gameId: string): Promise<void> {
+    await api.delete(`/games/${gameId}`);
+  },
+
+  async restoreGame(gameId: string): Promise<GameResponse> {
+    const response = await api.post<GameResponse>(`/games/${gameId}/restore`);
     return response.data;
   },
 
