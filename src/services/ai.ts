@@ -2,6 +2,7 @@ import axios from 'axios';
 import type {
   GenerateQuestionsRequest, GenerateQuestionsResponse,
   GenerateEmojiRequest, GenerateEmojiResponse,
+  GenerateEmojiHintRequest, GenerateEmojiHintResponse,
   GenerateCrosswordRequest, GenerateCrosswordResponse,
   SuggestThemeRequest, SuggestThemeResponse,
   GenerateOutcomesRequest, GenerateOutcomesResponse,
@@ -18,6 +19,9 @@ export const aiService = {
 
   generateEmoji: (data: GenerateEmojiRequest) =>
     aiClient.post<GenerateEmojiResponse>('/ai/generate-emoji', data).then(r => r.data),
+
+  generateEmojiHint: (data: GenerateEmojiHintRequest) =>
+    aiClient.post<GenerateEmojiHintResponse>('/ai/generate-emoji-hint', data).then(r => r.data),
 
   generateCrossword: (data: GenerateCrosswordRequest) =>
     aiClient.post<GenerateCrosswordResponse>('/ai/generate-crossword', data).then(r => r.data),

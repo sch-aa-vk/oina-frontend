@@ -254,7 +254,7 @@ export function GamePlay({
                   "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800"
                 )}
               >
-                <p className="text-sm font-semibold mb-2">
+                <p className="text-sm font-semibold">
                   ✅ Correct!
                 </p>
               </div>

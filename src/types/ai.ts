@@ -29,12 +29,22 @@ export interface GenerateEmojiRequest {
   language: SupportedLanguage;
 }
 export interface AiEmojiPuzzle {
-  emojis: string;
+  emojis: string[];
   answer: string;
   hint?: string;
 }
 export interface GenerateEmojiResponse {
   puzzles: AiEmojiPuzzle[];
+}
+
+export interface GenerateEmojiHintRequest {
+  mode: "emojis-from-answer" | "answer-from-emojis" | "hint-from-answer";
+  input: string;
+  language: SupportedLanguage;
+}
+export interface GenerateEmojiHintResponse {
+  result: string;
+  alternatives: string[];
 }
 
 export interface GenerateCrosswordRequest {
