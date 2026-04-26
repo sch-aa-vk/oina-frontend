@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Gift, Grid3x3, Smile, Sparkles, User2Icon, Users } from "lucide-react";
+import { Gift, Grid3x3, Smile, Sparkles, Users } from "lucide-react";
 import { appCache, CACHE_TTL, onHistoryRefresh } from "@/lib/cache";
 
 import {
@@ -11,17 +11,15 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSidebar } from "@/hooks/use-sidebar";
 import { gamesService } from "@/services/games";
 import type { GameResultResponse } from "@/types/games";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 
 export function NavProjects() {
   const { user, isLoading } = useAuth();
   const { isMobile, setOpenMobile } = useSidebar();
-  const navigate = useNavigate();
 
   const cached = user ? appCache.get<GameResultResponse[]>("game-history", CACHE_TTL.PERSONAL) : null;
   const [history, setHistory] = useState<GameResultResponse[]>(cached ?? []);
@@ -73,33 +71,8 @@ export function NavProjects() {
     });
   }, [loadHistory, user]);
 
-  if (!user && !isLoading) {
-    return (
-      <SidebarGroup className="flex-1 flex items-center justify-center group-data-[collapsible=icon]:hidden">
-        <div className="mx-3 p-4 rounded-xl bg-neutral-100 border border-neutral-200 text-center space-y-3">
-          <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mx-auto">
-            <User2Icon className="w-5 h-5 text-blue-500" />
-          </div>
-          <div>
-            <p className="text-sm font-medium text-neutral-800">
-              Sign in to save history
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Your conversations will appear here
-            </p>
-          </div>
-          <Button
-            onClick={() => {
-              if (isMobile) setOpenMobile(false);
-              navigate("/login");
-            }}
-            className="w-full h-8 text-xs rounded-lg cursor-pointer"
-          >
-            Sign in
-          </Button>
-        </div>
-      </SidebarGroup>
-    );
+  if (!user) {
+    return null;
   }
 
   const quickLinks = [
@@ -197,7 +170,7 @@ export function NavProjects() {
                       {result.gameTitle ?? "Deleted game"}
                     </span>
                     <span className="ml-auto text-[10px] text-muted-foreground shrink-0">
-                      {result.score}/{result.maxScore}
+                      {(result.score !== undefined && result.maxScore !== undefined) ? `${result.score}/${result.maxScore}` : ""}
                     </span>
                   </NavLink>
                 </SidebarMenuButton>

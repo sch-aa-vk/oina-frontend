@@ -84,6 +84,10 @@ export default function Crossword() {
     useState<Extract<GameVisibility, "private-link" | "public">>(
       "private-link",
     );
+  const [originalVisibility, setOriginalVisibility] =
+    useState<Extract<GameVisibility, "private-link" | "public">>(
+      "private-link",
+    );
   const [isPublishing, setIsPublishing] = useState<boolean>(false);
   const [draftGameId, setDraftGameId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState<boolean>(false);
@@ -124,6 +128,7 @@ export default function Crossword() {
       setGameTitle(game.title);
       if (game.visibility === "private-link" || game.visibility === "public") {
         setVisibility(game.visibility);
+        setOriginalVisibility(game.visibility);
         setWasPublished(true);
       }
       if (game.thumbnail) setExistingThumbnail(game.thumbnail);
@@ -161,6 +166,32 @@ export default function Crossword() {
     },
     [coverPreviewUrl],
   );
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("cw:draft");
+      if (!raw) return;
+      const d = JSON.parse(raw);
+      if (d.recipient) setRecipient(d.recipient);
+      if (typeof d.personalMessage === "string") setPersonalMessage(d.personalMessage);
+      if (Array.isArray(d.words)) setWords(d.words);
+      if (d.grid) setGrid(d.grid);
+      if (typeof d.gameTitle === "string") setGameTitle(d.gameTitle);
+      if (typeof d.showSolution === "boolean") setShowSolution(d.showSolution);
+      if (typeof d.clueLanguage === "string") setClueLanguage(d.clueLanguage);
+      if (typeof d.draftGameId === "string") setDraftGameId(d.draftGameId);
+      if (d.visibility === "private-link" || d.visibility === "public") setVisibility(d.visibility);
+    } catch { /* corrupted — ignore */ }
+  }, []);
+
+  const handlePreview = (): void => {
+    localStorage.setItem("cw:draft", JSON.stringify({
+      recipient, personalMessage, words, grid, gameTitle, showSolution, clueLanguage, draftGameId, visibility,
+    }));
+    navigate("/create/crossword/preview", {
+      state: { grid, recipient, personalMessage },
+    });
+  };
 
   const wordScript = useMemo<"latin" | "cyrillic" | null>(() => {
     for (const w of words) {
@@ -405,7 +436,7 @@ export default function Crossword() {
         if (coverFile && updateResult.coverUploadUrl) {
           await gamesService.uploadGameCover(updateResult.coverUploadUrl, coverFile);
         }
-        if (wasPublished) {
+        if (wasPublished && visibility !== originalVisibility) {
           await gamesService.publishGame(editGameId, buildPublishPayload(visibility));
         }
         appCache.set(`game-${editGameId}`, updateResult);
@@ -465,11 +496,7 @@ export default function Crossword() {
         onStepChange={setStep}
         stepLabels={STEP_LABELS}
         previewDisabled={!grid}
-        onPreview={() =>
-          navigate("/create/crossword/preview", {
-            state: { grid, recipient, personalMessage },
-          })
-        }
+        onPreview={handlePreview}
         canPublish={canPublish}
         onPublish={handlePublish}
         isPublishing={isPublishing}
@@ -488,7 +515,6 @@ export default function Crossword() {
             personalMessage={personalMessage}
             onPersonalMessageChange={setPersonalMessage}
             onContinue={() => setStep(2)}
-            theme={CROSSWORD_THEME}
             heading="Who's solving? 📝"
             namePlaceholder="e.g. Jamie, Grandma, My Love…"
             messagePlaceholder="A warm message your recipient sees before they start solving…"

@@ -39,6 +39,7 @@ export interface GameResponse {
   viewCount: number;
   playCount: number;
   likeCount: number;
+  isLikedByCurrentUser?: boolean;
   createdAt: string;
   updatedAt: string;
   currentVersion: number;
@@ -72,6 +73,7 @@ export interface GameSummaryResponse {
   viewCount: number;
   playCount: number;
   likeCount: number;
+  isLikedByCurrentUser?: boolean;
   createdAt: string;
   updatedAt: string;
   authorName?: string;
@@ -131,8 +133,9 @@ export interface GameHistoryResponse {
 }
 
 export interface RecordGameResultPayload {
-  score: number;
-  maxScore: number;
+  score?: number;
+  maxScore?: number;
+  outcomeId?: string;
   duration: number;
   completionStatus: CompletionStatus;
 }

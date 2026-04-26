@@ -1,14 +1,23 @@
 export type SupportedLanguage = "ru" | "en" | "kz";
 
+export interface AiOutcomeItem {
+  id: string;
+  title: string;
+}
+
 export interface GenerateQuestionsRequest {
   topic: string;
+  outcomes: AiOutcomeItem[];
   count: number;
   language: SupportedLanguage;
 }
+export interface AiPersonalityOption {
+  text: string;
+  outcomeId: string;
+}
 export interface AiQuestion {
   question: string;
-  options: string[];
-  correctIndex: number;
+  options: AiPersonalityOption[];
 }
 export interface GenerateQuestionsResponse {
   questions: AiQuestion[];
@@ -20,12 +29,22 @@ export interface GenerateEmojiRequest {
   language: SupportedLanguage;
 }
 export interface AiEmojiPuzzle {
-  emojis: string;
+  emojis: string[];
   answer: string;
   hint?: string;
 }
 export interface GenerateEmojiResponse {
   puzzles: AiEmojiPuzzle[];
+}
+
+export interface GenerateEmojiHintRequest {
+  mode: "emojis-from-answer" | "answer-from-emojis" | "hint-from-answer";
+  input: string;
+  language: SupportedLanguage;
+}
+export interface GenerateEmojiHintResponse {
+  result: string;
+  alternatives: string[];
 }
 
 export interface GenerateCrosswordRequest {
@@ -36,6 +55,19 @@ export interface GenerateCrosswordRequest {
 export interface GenerateCrosswordResponse {
   result: string;
   alternatives: string[];
+}
+
+export interface GenerateOutcomesRequest {
+  topic: string;
+  description?: string;
+  count?: number;
+  language: SupportedLanguage;
+}
+export interface AiOutcomeSuggestion {
+  title: string;
+}
+export interface GenerateOutcomesResponse {
+  outcomes: AiOutcomeSuggestion[];
 }
 
 export interface SuggestThemeRequest {

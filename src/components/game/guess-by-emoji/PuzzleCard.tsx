@@ -22,6 +22,10 @@ interface PuzzleCardProps {
   onChange: (id: string, changes: Partial<EmojiPuzzle>) => void;
   onRemove: (id: string) => void;
   totalPuzzles: number;
+  onAiEmojis?: (puzzleId: string, answer: string) => Promise<void>;
+  isAiLoadingEmojis?: boolean;
+  onAiHint?: (puzzleId: string, answer: string) => Promise<void>;
+  isAiLoadingHint?: boolean;
 }
 
 export function PuzzleCard({
@@ -30,6 +34,10 @@ export function PuzzleCard({
   onChange,
   onRemove,
   totalPuzzles,
+  onAiEmojis,
+  isAiLoadingEmojis = false,
+  onAiHint,
+  isAiLoadingHint = false,
 }: PuzzleCardProps) {
   const [expanded, setExpanded] = useState<boolean>(true);
   const cfg = DIFFICULTY_CONFIG[puzzle.difficulty];
@@ -110,15 +118,22 @@ export function PuzzleCard({
           <div className="space-y-1.5 sm:space-y-2">
             <div className="flex items-center justify-between">
               <label className="text-xs sm:text-sm font-medium">Emoji sequence</label>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 sm:h-7 gap-1 sm:gap-1.5 text-[10px] sm:text-xs text-muted-foreground hover:text-primary px-1.5 sm:px-2"
-              >
-                <Sparkles className="w-3 h-3" />
-                <span className="hidden sm:inline">AI suggest</span>
-                <span className="sm:hidden">AI</span>
-              </Button>
+              {onAiEmojis && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 sm:h-7 gap-1 sm:gap-1.5 text-[10px] sm:text-xs text-muted-foreground hover:text-primary px-1.5 sm:px-2"
+                  disabled={!puzzle.answer.trim() || isAiLoadingEmojis}
+                  onClick={() => onAiEmojis(puzzle.id, puzzle.answer)}
+                  title="Suggest emojis based on your answer"
+                >
+                  <Sparkles className={cn("w-3 h-3", isAiLoadingEmojis && "animate-spin")} />
+                  <span className="hidden sm:inline">
+                    {isAiLoadingEmojis ? "Thinking…" : "AI suggest"}
+                  </span>
+                  <span className="sm:hidden">AI</span>
+                </Button>
+              )}
             </div>
             <EmojiSequenceBuilder
               emojis={puzzle.emojis}
@@ -135,13 +150,31 @@ export function PuzzleCard({
             />
           </div>
           <div className="space-y-1.5 sm:space-y-2">
-            <label className="text-xs sm:text-sm font-medium flex items-center gap-1.5 sm:gap-2">
-              <Lightbulb className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-muted-foreground" />
-              Hint
-              <Badge variant="secondary" className="text-[10px] sm:text-xs font-normal">
-                Optional
-              </Badge>
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="text-xs sm:text-sm font-medium flex items-center gap-1.5 sm:gap-2">
+                <Lightbulb className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-muted-foreground" />
+                Hint
+                <Badge variant="secondary" className="text-[10px] sm:text-xs font-normal">
+                  Optional
+                </Badge>
+              </label>
+              {onAiHint && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 sm:h-7 gap-1 sm:gap-1.5 text-[10px] sm:text-xs text-muted-foreground hover:text-primary px-1.5 sm:px-2"
+                  disabled={!puzzle.answer.trim() || isAiLoadingHint}
+                  onClick={() => onAiHint(puzzle.id, puzzle.answer)}
+                  title="Suggest a hint based on your answer"
+                >
+                  <Sparkles className={cn("w-3 h-3", isAiLoadingHint && "animate-spin")} />
+                  <span className="hidden sm:inline">
+                    {isAiLoadingHint ? "Thinking…" : "AI suggest"}
+                  </span>
+                  <span className="sm:hidden">AI</span>
+                </Button>
+              )}
+            </div>
             <Input
               placeholder="Give a subtle nudge…"
               value={puzzle.hint}

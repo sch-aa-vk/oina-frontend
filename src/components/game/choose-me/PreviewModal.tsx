@@ -55,11 +55,7 @@ export function PreviewModal({
                 selected === null &&
                   "hover:border-primary/50 hover:bg-primary/5 active:scale-[0.98]",
                 selected === i &&
-                  opt.isCorrect &&
-                  "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40",
-                selected === i &&
-                  !opt.isCorrect &&
-                  "border-red-400 bg-red-50 dark:bg-red-950/40",
+                  "border-violet-500 bg-violet-50 dark:bg-violet-950/40",
                 selected !== null && selected !== i && "opacity-50"
               )}
             >
@@ -67,11 +63,6 @@ export function PreviewModal({
               <span className="text-xs sm:text-sm font-medium flex-1 min-w-0">
                 {opt.text || `Option ${i + 1}`}
               </span>
-              {selected === i && (
-                <span className="text-xs shrink-0">
-                  {opt.isCorrect ? "✅" : "❌"}
-                </span>
-              )}
             </button>
           ))}
         </div>

@@ -1,5 +1,5 @@
 import type { Recipient } from "@/components/game";
-import type { Question } from "@/components/game/choose-me";
+import type { Question, GameOutcome } from "@/components/game/choose-me";
 import type { CrosswordWord } from "@/components/game/crossword";
 import type { EmojiPuzzle } from "@/components/game/guess-by-emoji";
 import type {
@@ -27,12 +27,16 @@ interface BaseBuilderInput {
 export function mapChooseMeContent(input: {
   recipient: Recipient;
   personalMessage: string;
+  topic: string;
+  outcomes: GameOutcome[];
   questions: Question[];
   shuffle: boolean;
 }): GameContent {
   return {
     recipient: input.recipient,
     personalMessage: input.personalMessage,
+    topic: input.topic,
+    outcomes: input.outcomes,
     questions: input.questions,
     settings: {
       shuffle: input.shuffle,

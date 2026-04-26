@@ -16,7 +16,9 @@ const VerifyEmail = lazy(() => import("@/pages/auth/VerifyEmail"));
 const ForgotPassword = lazy(() => import("@/pages/auth/ForgotPassword"));
 const ResetPassword = lazy(() => import("@/pages/auth/ResetPassword"));
 const ChooseMe = lazy(() => import("@/pages/games/ChooseMe"));
+const ChooseMePreview = lazy(() => import("@/pages/games/ChooseMePreview"));
 const GuessByEmoji = lazy(() => import("@/pages/games/GuessByEmoji"));
+const GuessByEmojiPreview = lazy(() => import("@/pages/games/GuessByEmojiPreview"));
 const Crossword = lazy(() => import("@/pages/games/Crossword"));
 const CrosswordPreview = lazy(() => import("@/pages/games/CrosswordPreview"));
 const GameDetails = lazy(() => import("@/pages/games/GameDetails"));
@@ -29,19 +31,18 @@ export default function App() {
           <Routes>
             <Route element={<MainLayout />}>
               <Route path="/" element={<Home />} />
+              <Route path="/games/:gameId" element={<GameDetails />} />
             </Route>
 
             <Route element={<ProtectedRoute />}>
               <Route element={<MainLayout />}>
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/create/choose-me" element={<ChooseMe />} />
-                <Route
-                  path="/create/guess-by-emoji"
-                  element={<GuessByEmoji />}
-                />
+                <Route path="/create/choose-me/preview" element={<ChooseMePreview />} />
+                <Route path="/create/guess-by-emoji" element={<GuessByEmoji />} />
+                <Route path="/create/guess-by-emoji/preview" element={<GuessByEmojiPreview />} />
                 <Route path="/create/crossword" element={<Crossword />} />
                 <Route path="/create/crossword/preview" element={<CrosswordPreview />} />
-                <Route path="/games/:gameId" element={<GameDetails />} />
                 <Route path="/gift-generator" element={<GiftGenerator />} />
               </Route>
             </Route>

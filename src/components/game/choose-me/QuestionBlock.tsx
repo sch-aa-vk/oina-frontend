@@ -1,12 +1,13 @@
-import { Plus, Trash2, Sparkles } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { OptionCard } from "./OptionCard";
-import type { Question, QuestionField, GameOption, OptionField } from "./types";
+import type { Question, QuestionField, GameOption, OptionField, GameOutcome } from "./types";
 
 interface QuestionBlockProps {
   question: Question;
   qIndex: number;
+  outcomes: GameOutcome[];
   onChange: (
     qIndex: number,
     field: QuestionField,
@@ -19,6 +20,7 @@ interface QuestionBlockProps {
 export function QuestionBlock({
   question,
   qIndex,
+  outcomes,
   onChange,
   onRemove,
   totalQuestions,
@@ -27,13 +29,13 @@ export function QuestionBlock({
     if (question.options.length >= 6) return;
     onChange(qIndex, "options", [
       ...question.options,
-      { text: "", emoji: "", isCorrect: false },
+      { text: "", emoji: "", outcomeId: "" },
     ]);
   };
   const updateOption = (
     optIndex: number,
     field: OptionField,
-    value: string | boolean
+    value: string
   ): void => {
     onChange(
       qIndex,
@@ -66,14 +68,6 @@ export function QuestionBlock({
           />
         </div>
         <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 sm:h-8 gap-1 sm:gap-1.5 text-[10px] sm:text-xs text-muted-foreground hover:text-primary px-1.5 sm:px-2"
-          >
-            <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-            <span className="hidden sm:inline">AI help</span>
-          </Button>
           {totalQuestions > 1 && (
             <Button
               variant="ghost"
@@ -93,6 +87,7 @@ export function QuestionBlock({
             key={i}
             option={opt}
             index={i}
+            outcomes={outcomes}
             onChange={updateOption}
             onRemove={removeOption}
             isOnly={question.options.length === 1}

@@ -13,7 +13,7 @@ import {
   buildCrosswordGrid,
 } from "@/components/game";
 import type { GameResponse, GameType } from "@/types/games";
-import type { Question } from "@/components/game/choose-me";
+import type { Question, GameOutcome } from "@/components/game/choose-me";
 import type { EmojiPuzzle } from "@/components/game/guess-by-emoji";
 import type { CrosswordWord } from "@/components/game/crossword";
 import type { Recipient } from "@/components/game";
@@ -47,9 +47,23 @@ export default function GameDetails() {
           duration,
           completionStatus: "completed",
         })
-        .then(() => {
-          requestHistoryRefresh();
+        .then(() => requestHistoryRefresh())
+        .catch(() => {});
+    },
+    [gameId, isAuthenticated, game?.visibility],
+  );
+
+  const handleChooseMeComplete = useCallback(
+    (outcomeId: string) => {
+      if (!isAuthenticated || game?.visibility === "draft") return;
+      const duration = Date.now() - startedAt.current;
+      gamesService
+        .recordGameResult(gameId, {
+          outcomeId,
+          duration,
+          completionStatus: "completed",
         })
+        .then(() => requestHistoryRefresh())
         .catch(() => {});
     },
     [gameId, isAuthenticated, game?.visibility],
@@ -77,6 +91,7 @@ export default function GameDetails() {
           setGame(cached);
           setState("ready");
           setLocalLikeCount(cached.likeCount);
+          setIsLiked(cached.isLikedByCurrentUser ?? false);
           return;
         }
 
@@ -107,6 +122,7 @@ export default function GameDetails() {
         setGame(baseGame);
         setState("ready");
         setLocalLikeCount(baseGame.likeCount);
+        setIsLiked(baseGame.isLikedByCurrentUser ?? false);
 
         if (baseGame.visibility !== "draft") {
           appCache.set(`game-${gameId}`, baseGame);
@@ -143,7 +159,7 @@ export default function GameDetails() {
     };
   }, [gameId, hasGameId]);
 
-  const handleToggleLike = async () => {
+  const handleToggleLike = useCallback(async () => {
     if (!isAuthenticated || isLiking || game?.visibility === "draft") return;
 
     setIsLiking(true);
@@ -175,7 +191,7 @@ export default function GameDetails() {
     } finally {
       setIsLiking(false);
     }
-  };
+  }, [isAuthenticated, isLiking, isLiked, gameId, game?.visibility]);
 
   const gamePlayContent = useMemo(() => {
     if (!game) return null;
@@ -190,15 +206,34 @@ export default function GameDetails() {
     const gameType = game.type as GameType;
 
     if (gameType === "choose-me") {
+      const outcomes = (content.outcomes as GameOutcome[]) || [];
+      if (outcomes.length < 2) {
+        return (
+          <div className="min-h-screen bg-gradient-to-br from-violet-50 to-pink-50 dark:from-violet-950 dark:to-pink-950 flex items-center justify-center p-4">
+            <div className="bg-background rounded-3xl border border-border shadow-2xl p-8 max-w-md w-full space-y-4 text-center">
+              <p className="text-lg font-semibold">Game unavailable</p>
+              <p className="text-sm text-muted-foreground">
+                This game was created in an older format and cannot be played.
+              </p>
+            </div>
+          </div>
+        );
+      }
       const questions = (content.questions as Question[]) || [];
       const settings = (content.settings as { shuffle?: boolean }) || {};
       return (
         <ChooseMeGamePlay
           questions={questions}
+          outcomes={outcomes}
           recipient={recipient}
           personalMessage={personalMessage}
           shuffle={settings.shuffle || false}
-          onComplete={handleGameComplete}
+          onComplete={handleChooseMeComplete}
+          isLiked={isLiked}
+          likeCount={localLikeCount}
+          onToggleLike={handleToggleLike}
+          isLiking={isLiking}
+          isAuthenticated={isAuthenticated}
         />
       );
     }
@@ -213,6 +248,11 @@ export default function GameDetails() {
           personalMessage={personalMessage}
           showAnswers={settings.showAnswers || false}
           onComplete={handleGameComplete}
+          isLiked={isLiked}
+          likeCount={localLikeCount}
+          onToggleLike={handleToggleLike}
+          isLiking={isLiking}
+          isAuthenticated={isAuthenticated}
         />
       );
     }
@@ -242,12 +282,17 @@ export default function GameDetails() {
           personalMessage={personalMessage}
           showSolution={settings.showSolution || false}
           onComplete={handleGameComplete}
+          isLiked={isLiked}
+          likeCount={localLikeCount}
+          onToggleLike={handleToggleLike}
+          isLiking={isLiking}
+          isAuthenticated={isAuthenticated}
         />
       );
     }
 
     return null;
-  }, [game, handleGameComplete]);
+  }, [game, handleGameComplete, handleChooseMeComplete, isLiked, localLikeCount, handleToggleLike, isLiking, isAuthenticated]);
 
   if (gamePlayContent && game?.visibility !== "draft") {
     return (

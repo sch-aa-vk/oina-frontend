@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Lightbulb, ImageIcon, X } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { mapGuessByEmojiContent, buildCreateGamePayload, buildPublishPayload, validateCreatePayload } from "@/lib/gameMappers";
@@ -9,6 +10,7 @@ import { appCache, CACHE_TTL } from "@/lib/cache";
 import { gamesService } from "@/services/games";
 import { aiService } from "@/services/ai";
 import type { GameResponse, GameVisibility } from "@/types/games";
+import type { SupportedLanguage } from "@/types/ai";
 import {
   GameTopBar,
   RecipientStep,
@@ -22,40 +24,60 @@ import {
 import type { Recipient } from "@/components/game";
 import {
   PuzzleCard,
-  PreviewModal,
   STEP_LABELS,
   DIFFICULTY_CONFIG,
   createDefaultPuzzle,
 } from "@/components/game/guess-by-emoji";
 import type { DifficultyLevel, EmojiPuzzle } from "@/components/game/guess-by-emoji";
 
+const DRAFT_KEY = "ge:draft";
+
 export default function GuessByEmoji() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const editGameId = searchParams.get("gameId");
   const isEditMode = editGameId !== null;
 
-  const [step, setStep] = useState<number>(1);
-  const [showPreview, setShowPreview] = useState<boolean>(false);
-  const [recipient, setRecipient] = useState<Recipient>({
-    name: "",
-    occasion: "",
-  });
+  const step = Number(searchParams.get("step") ?? "1");
+  const setStep = (s: number): void =>
+    setSearchParams(
+      (prev) => { prev.set("step", String(s)); return prev; },
+      { replace: true }
+    );
+
+  const [recipient, setRecipient] = useState<Recipient>({ name: "", occasion: "" });
   const [personalMessage, setPersonalMessage] = useState<string>("");
+  const [topic, setTopic] = useState<string>("");
   const [puzzles, setPuzzles] = useState<EmojiPuzzle[]>([createDefaultPuzzle()]);
   const [gameTitle, setGameTitle] = useState<string>("");
   const [showAnswers, setShowAnswers] = useState<boolean>(false);
   const [visibility, setVisibility] = useState<Extract<GameVisibility, "private-link" | "public">>("private-link");
+  const [originalVisibility, setOriginalVisibility] = useState<Extract<GameVisibility, "private-link" | "public">>("private-link");
   const [isPublishing, setIsPublishing] = useState<boolean>(false);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [saveSuccess, setSaveSuccess] = useState<boolean>(false);
   const [draftGameId, setDraftGameId] = useState<string | null>(null);
   const [isAiLoading, setIsAiLoading] = useState<boolean>(false);
   const [aiError, setAiError] = useState<string | null>(null);
+  const [aiLoadingPuzzleId, setAiLoadingPuzzleId] = useState<string | null>(null);
+  const [aiLoadingHintId, setAiLoadingHintId] = useState<string | null>(null);
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [coverPreviewUrl, setCoverPreviewUrl] = useState<string | null>(null);
   const [isLoadingGame, setIsLoadingGame] = useState<boolean>(isEditMode);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [wasPublished, setWasPublished] = useState<boolean>(false);
   const [existingThumbnail, setExistingThumbnail] = useState<string | null>(null);
+
+  const detectedLanguage: SupportedLanguage = /[А-ЯҚӨҮІҒҢҺа-яқөүіғңһ]/i.test(
+    topic || recipient.name || recipient.occasion
+  )
+    ? /[ҚӨҮІҒҢҺ]/i.test(topic || recipient.name || recipient.occasion)
+      ? "kz"
+      : "ru"
+    : "en";
+
+  const languageRef = useRef<SupportedLanguage>(detectedLanguage);
+  languageRef.current = detectedLanguage;
 
   useEffect(() => {
     if (!editGameId) return;
@@ -65,6 +87,7 @@ export default function GuessByEmoji() {
       const c = game.content;
       if (c.recipient) setRecipient(c.recipient as Recipient);
       if (typeof c.personalMessage === "string") setPersonalMessage(c.personalMessage);
+      if (typeof c.topic === "string") setTopic(c.topic);
       if (Array.isArray(c.puzzles)) {
         setPuzzles((c.puzzles as EmojiPuzzle[]).map((p) => ({
           ...p,
@@ -76,6 +99,7 @@ export default function GuessByEmoji() {
       setGameTitle(game.title);
       if (game.visibility === "private-link" || game.visibility === "public") {
         setVisibility(game.visibility);
+        setOriginalVisibility(game.visibility);
         setWasPublished(true);
       }
       if (game.thumbnail) setExistingThumbnail(game.thumbnail);
@@ -104,18 +128,35 @@ export default function GuessByEmoji() {
     return () => { cancelled = true; };
   }, [editGameId]);
 
+  
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (!raw) return;
+      const d = JSON.parse(raw);
+      if (d.recipient) setRecipient(d.recipient);
+      if (typeof d.personalMessage === "string") setPersonalMessage(d.personalMessage);
+      if (typeof d.topic === "string") setTopic(d.topic);
+      if (Array.isArray(d.puzzles)) setPuzzles(d.puzzles);
+      if (typeof d.showAnswers === "boolean") setShowAnswers(d.showAnswers);
+      if (typeof d.gameTitle === "string") setGameTitle(d.gameTitle);
+      if (typeof d.draftGameId === "string") setDraftGameId(d.draftGameId);
+      if (d.visibility === "private-link" || d.visibility === "public") setVisibility(d.visibility);
+    } catch { /* corrupted — ignore */ }
+  }, []);
+
   useEffect(() => () => {
     if (coverPreviewUrl) URL.revokeObjectURL(coverPreviewUrl);
   }, [coverPreviewUrl]);
 
-  const updatePuzzle = (id: string, changes: Partial<EmojiPuzzle>): void => {
-    setPuzzles((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, ...changes } : p))
-    );
-  };
+  const updatePuzzle = useCallback((id: string, changes: Partial<EmojiPuzzle>): void => {
+    setPuzzles((prev) => prev.map((p) => (p.id === id ? { ...p, ...changes } : p)));
+  }, []);
+
   const addPuzzle = (): void => {
     if (puzzles.length < 10) setPuzzles((p) => [...p, createDefaultPuzzle()]);
   };
+
   const removePuzzle = (id: string): void => {
     setPuzzles((p) => p.filter((p) => p.id !== id));
   };
@@ -125,13 +166,13 @@ export default function GuessByEmoji() {
     setAiError(null);
     try {
       const response = await aiService.generateEmoji({
-        topic: `${recipient.name}, ${recipient.occasion}`,
+        topic: topic.trim() || `${recipient.name}, ${recipient.occasion}`,
         count: 5,
-        language: 'ru',
+        language: languageRef.current,
       });
       const generated: EmojiPuzzle[] = response.puzzles.map((p) => ({
         id: Math.random().toString(36).slice(2),
-        emojis: [...p.emojis],
+        emojis: p.emojis,
         answer: p.answer,
         hint: p.hint ?? '',
         difficulty: 'medium' as DifficultyLevel,
@@ -144,6 +185,41 @@ export default function GuessByEmoji() {
     }
   };
 
+  const handleAiEmojis = useCallback(async (puzzleId: string, answer: string): Promise<void> => {
+    if (!answer.trim()) return;
+    setAiLoadingPuzzleId(puzzleId);
+    try {
+      const result = await aiService.generateEmojiHint({
+        mode: 'emojis-from-answer',
+        input: answer.trim(),
+        language: languageRef.current,
+      });
+      const segments = [...new Intl.Segmenter().segment(result.result)].map((s) => s.segment);
+      updatePuzzle(puzzleId, { emojis: segments });
+    } catch {
+      // silent — user can try again
+    } finally {
+      setAiLoadingPuzzleId(null);
+    }
+  }, [updatePuzzle]);
+
+  const handleAiHint = useCallback(async (puzzleId: string, answer: string): Promise<void> => {
+    if (!answer.trim()) return;
+    setAiLoadingHintId(puzzleId);
+    try {
+      const result = await aiService.generateEmojiHint({
+        mode: 'hint-from-answer',
+        input: answer.trim(),
+        language: languageRef.current,
+      });
+      updatePuzzle(puzzleId, { hint: result.result });
+    } catch {
+      // silent
+    } finally {
+      setAiLoadingHintId(null);
+    }
+  }, [updatePuzzle]);
+
   const completeness = {
     recipient: recipient.name.trim().length > 0,
     puzzles:
@@ -153,11 +229,74 @@ export default function GuessByEmoji() {
   };
   const canPublish = Object.values(completeness).every(Boolean);
 
-  const handlePublish = async (): Promise<void> => {
-    if (isPublishing || !canPublish) {
-      return;
-    }
+  const handlePreview = (): void => {
+    localStorage.setItem(DRAFT_KEY, JSON.stringify({
+      recipient, personalMessage, topic, puzzles, showAnswers, gameTitle, draftGameId, visibility,
+    }));
+    navigate("/create/guess-by-emoji/preview", {
+      state: { puzzles, recipient, personalMessage },
+    });
+  };
 
+  const handleSaveDraft = async (): Promise<void> => {
+    if (isSaving) return;
+    setIsSaving(true);
+    setSaveSuccess(false);
+
+    const title =
+      gameTitle.trim() ||
+      (recipient.name ? `Угадай по эмодзи для ${recipient.name}` : "Моя игра");
+    const content = mapGuessByEmojiContent({ recipient, personalMessage, puzzles, showAnswers });
+
+    try {
+      if (isEditMode && editGameId) {
+        const updateResult = await gamesService.updateGame(editGameId, {
+          title,
+          content,
+          coverImageContentType: coverFile ? coverFile.type : undefined,
+        });
+        if (coverFile && updateResult.coverUploadUrl) {
+          await gamesService.uploadGameCover(updateResult.coverUploadUrl, coverFile);
+        }
+        if (wasPublished && visibility !== originalVisibility) {
+          await gamesService.publishGame(editGameId, buildPublishPayload(visibility));
+        }
+        appCache.set(`game-${editGameId}`, updateResult);
+      } else if (draftGameId) {
+        const updateResult = await gamesService.updateGame(draftGameId, {
+          title,
+          content,
+          coverImageContentType: coverFile ? coverFile.type : undefined,
+        });
+        if (coverFile && updateResult.coverUploadUrl) {
+          await gamesService.uploadGameCover(updateResult.coverUploadUrl, coverFile);
+        }
+      } else {
+        const payload = buildCreateGamePayload(
+          "guess-by-emoji",
+          { title, recipient, personalMessage },
+          content
+        );
+        const draft = await gamesService.createGame({
+          ...payload,
+          coverImageContentType: coverFile ? coverFile.type : undefined,
+        });
+        setDraftGameId(draft.gameId);
+        if (coverFile && draft.coverUploadUrl) {
+          await gamesService.uploadGameCover(draft.coverUploadUrl, coverFile);
+        }
+      }
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 2000);
+    } catch {
+      // silent — user can retry
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handlePublish = async (): Promise<void> => {
+    if (isPublishing || !canPublish) return;
     setIsPublishing(true);
 
     try {
@@ -240,28 +379,22 @@ export default function GuessByEmoji() {
 
   return (
     <div className="min-h-screen bg-muted/30">
-      {showPreview && (
-        <PreviewModal
-          puzzles={puzzles}
-          recipient={recipient}
-          personalMessage={personalMessage}
-          onClose={() => setShowPreview(false)}
-        />
-      )}
-
       <GameTopBar
         step={step}
         onStepChange={setStep}
         stepLabels={STEP_LABELS}
-        onPreview={() => setShowPreview(true)}
+        onPreview={handlePreview}
         canPublish={canPublish}
         onPublish={handlePublish}
         isPublishing={isPublishing}
+        onSave={handleSaveDraft}
+        isSaving={isSaving}
+        saveSuccess={saveSuccess}
         isPublished={wasPublished}
         theme={GUESS_BY_EMOJI_THEME}
       />
 
-      <div className="max-w-3xl mx-auto px-3 sm:px-6 py-5 sm:py-8 space-y-4 sm:space-y-6">
+      <div className="mx-auto px-3 sm:px-6 py-5 sm:py-8 space-y-4 sm:space-y-6">
         {step === 1 && (
           <RecipientStep
             recipient={recipient}
@@ -269,12 +402,9 @@ export default function GuessByEmoji() {
             personalMessage={personalMessage}
             onPersonalMessageChange={setPersonalMessage}
             onContinue={() => setStep(2)}
-            theme={GUESS_BY_EMOJI_THEME}
             heading="Who's playing? 😄"
             namePlaceholder="e.g. Alex, Dad, My Person…"
             messagePlaceholder="Write a fun intro your recipient sees before they start guessing…"
-            aiTeaserTitle="AI-powered emoji suggestions — coming next step"
-            aiTeaserBody="Describe a memory, movie, or inside joke and our AI will pick the perfect emoji combo to represent it."
             continueLabel="Continue to puzzles →"
           />
         )}
@@ -296,6 +426,18 @@ export default function GuessByEmoji() {
               </Badge>
             </div>
 
+            <div className="space-y-1.5">
+              <label className="text-xs sm:text-sm font-medium">
+                Topic <span className="text-muted-foreground font-normal">(helps AI generate better puzzles)</span>
+              </label>
+              <Input
+                placeholder={`e.g. "Our favourite movies with ${recipient.name || "them"}"`}
+                value={topic}
+                onChange={(e) => setTopic(e.target.value)}
+                className="text-sm"
+              />
+            </div>
+
             {recipient.name && (
               <AiBanner
                 recipientName={recipient.name}
@@ -303,31 +445,14 @@ export default function GuessByEmoji() {
                 title={(name: string) =>
                   `AI can suggest emoji combos for ${name}`
                 }
-                subtitle="Describe a memory or word and we'll pick the perfect emojis"
+                subtitle="Generates 5 puzzles based on your topic — replaces current puzzles"
                 onGenerate={handleAiGenerate}
                 isLoading={isAiLoading}
                 disabled={!recipient.name.trim() || !recipient.occasion.trim()}
                 error={aiError}
+                showCloseButton={false}
               />
             )}
-
-            <div className="grid grid-cols-3 gap-2 sm:gap-3">
-              {[
-                { icon: "😄🎂🎉", label: "Add emojis" },
-                { icon: "💡", label: "Set the answer" },
-                { icon: "🎯", label: "Pick difficulty" },
-              ].map((item) => (
-                <div
-                  key={item.label}
-                  className="rounded-xl sm:rounded-2xl bg-background border border-border p-2 sm:p-3 text-center space-y-0.5 sm:space-y-1.5"
-                >
-                  <p className="text-lg sm:text-2xl">{item.icon}</p>
-                  <p className="text-[10px] sm:text-xs text-muted-foreground font-medium leading-snug">
-                    {item.label}
-                  </p>
-                </div>
-              ))}
-            </div>
 
             <div className="space-y-3 sm:space-y-4">
               {puzzles.map((puzzle, i) => (
@@ -338,6 +463,10 @@ export default function GuessByEmoji() {
                   onChange={updatePuzzle}
                   onRemove={removePuzzle}
                   totalPuzzles={puzzles.length}
+                  onAiEmojis={handleAiEmojis}
+                  isAiLoadingEmojis={aiLoadingPuzzleId === puzzle.id}
+                  onAiHint={handleAiHint}
+                  isAiLoadingHint={aiLoadingHintId === puzzle.id}
                 />
               ))}
             </div>
@@ -368,21 +497,9 @@ export default function GuessByEmoji() {
           <>
             <SummaryCard
               items={[
-                {
-                  icon: "👤",
-                  label: "Recipient",
-                  value: recipient.name || "—",
-                },
-                {
-                  icon: "🎉",
-                  label: "Occasion",
-                  value: recipient.occasion || "—",
-                },
-                {
-                  icon: "😄",
-                  label: "Puzzles",
-                  value: `${puzzles.length} puzzles`,
-                },
+                { icon: "👤", label: "Recipient", value: recipient.name || "—" },
+                { icon: "🎉", label: "Occasion", value: recipient.occasion || "—" },
+                { icon: "😄", label: "Puzzles", value: `${puzzles.length} puzzles` },
               ]}
             >
               <div className="space-y-1.5 sm:space-y-2">
@@ -390,35 +507,29 @@ export default function GuessByEmoji() {
                   Difficulty mix
                 </p>
                 <div className="flex gap-1.5 sm:gap-2">
-                  {(["easy", "medium", "hard"] as DifficultyLevel[]).map(
-                    (level) => {
-                      const count = puzzles.filter(
-                        (p) => p.difficulty === level
-                      ).length;
-                      const cfg = DIFFICULTY_CONFIG[level];
-                      return (
-                        <div
-                          key={level}
-                          className={cn(
-                            "flex-1 rounded-lg sm:rounded-xl px-2 sm:px-3 py-1.5 sm:py-2 border text-center",
-                            count > 0 ? cfg.bg : "bg-muted/30 border-border"
-                          )}
-                        >
-                          <p
-                            className={cn(
-                              "text-base sm:text-lg font-bold",
-                              count > 0 ? cfg.color : "text-muted-foreground/40"
-                            )}
-                          >
-                            {count}
-                          </p>
-                          <p className="text-[10px] sm:text-xs text-muted-foreground">
-                            {cfg.label}
-                          </p>
-                        </div>
-                      );
-                    }
-                  )}
+                  {(["easy", "medium", "hard"] as DifficultyLevel[]).map((level) => {
+                    const count = puzzles.filter((p) => p.difficulty === level).length;
+                    const cfg = DIFFICULTY_CONFIG[level];
+                    return (
+                      <div
+                        key={level}
+                        className={cn(
+                          "flex-1 rounded-lg sm:rounded-xl px-2 sm:px-3 py-1.5 sm:py-2 border text-center",
+                          count > 0 ? cfg.bg : "bg-muted/30 border-border"
+                        )}
+                      >
+                        <p className={cn(
+                          "text-base sm:text-lg font-bold",
+                          count > 0 ? cfg.color : "text-muted-foreground/40"
+                        )}>
+                          {count}
+                        </p>
+                        <p className="text-[10px] sm:text-xs text-muted-foreground">
+                          {cfg.label}
+                        </p>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </SummaryCard>
@@ -430,9 +541,7 @@ export default function GuessByEmoji() {
               visibility={visibility}
               onVisibilityChange={setVisibility}
               isPublishing={isPublishing}
-              titlePlaceholder={`e.g. "Can you decode us?" for ${
-                recipient.name || "them"
-              }`}
+              titlePlaceholder={`e.g. "Can you decode us?" for ${recipient.name || "them"}`}
             >
               <div className="space-y-1.5 sm:space-y-2">
                 <label className="text-xs sm:text-sm font-medium">Cover image <span className="text-muted-foreground font-normal">(optional)</span></label>

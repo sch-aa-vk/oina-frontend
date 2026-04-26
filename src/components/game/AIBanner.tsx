@@ -13,6 +13,7 @@ interface AiBannerProps {
   isLoading?: boolean;
   disabled?: boolean;
   error?: string | null;
+  showCloseButton?: boolean;
 }
 
 export function AiBanner({
@@ -25,6 +26,7 @@ export function AiBanner({
   isLoading = false,
   disabled = false,
   error,
+  showCloseButton = true,
 }: AiBannerProps) {
   const [dismissed, setDismissed] = useState<boolean>(false);
 
@@ -39,15 +41,17 @@ export function AiBanner({
           theme.teaserBg,
         )}
       >
-        <button
-          onClick={() => setDismissed(true)}
-          className={cn(
-            "absolute top-2.5 right-3 sm:static sm:order-last text-lg leading-none p-1",
-            theme.teaserBody,
-          )}
-        >
-          &times;
-        </button>
+        {showCloseButton && (
+          <button
+            onClick={() => setDismissed(true)}
+            className={cn(
+              "absolute top-2.5 right-3 sm:static sm:order-last text-lg leading-none p-1",
+              theme.teaserBody,
+            )}
+          >
+            &times;
+          </button>
+        )}
 
         <div className="flex items-start sm:items-center gap-2.5 sm:gap-3">
           <div
