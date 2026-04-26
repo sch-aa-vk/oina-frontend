@@ -23,7 +23,9 @@ export function GridPreview({
               key={`${r}-${c}`}
               className={cn(
                 "relative flex items-center justify-center select-none",
-                cell.isBlack ? "bg-foreground" : "bg-background"
+                cell.isBlack
+                  ? "bg-[#EFF6FF]"
+                  : "bg-background"
               )}
               style={{ width: cellSize, height: cellSize }}
             >

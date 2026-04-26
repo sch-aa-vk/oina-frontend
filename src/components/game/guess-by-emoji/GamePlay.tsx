@@ -75,10 +75,10 @@ export function GamePlay({
 
   if (isComplete) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950 dark:to-orange-950 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-muted/30 flex items-center justify-center p-4">
         <div className="bg-background rounded-3xl border border-border shadow-2xl p-8 max-w-md w-full space-y-6">
           <div className="text-center space-y-2">
-            <div className="text-6xl font-bold bg-gradient-to-r from-amber-500 to-orange-500 bg-clip-text text-transparent">
+            <div className="text-6xl font-bold bg-linear-to-r from-amber-500 to-orange-500 bg-clip-text text-transparent">
               {score}/{puzzles.length}
             </div>
             <p className="text-lg font-semibold">Game Complete!</p>
@@ -137,7 +137,7 @@ export function GamePlay({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950 dark:to-orange-950 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-muted/30 flex items-center justify-center p-4">
       <div className="bg-background rounded-3xl border border-border shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
         <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm px-6 py-4 border-b border-border space-y-3">
           <div>
@@ -151,7 +151,7 @@ export function GamePlay({
 
           <div className="h-1 bg-muted rounded-full overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-amber-400 to-orange-500 transition-all duration-300"
+              className="h-full bg-linear-to-r from-amber-400 to-orange-500 transition-all duration-300"
               style={{
                 width: `${((currentIndex + 1) / puzzles.length) * 100}%`,
               }}

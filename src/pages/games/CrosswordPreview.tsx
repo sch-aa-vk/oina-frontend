@@ -53,7 +53,7 @@ export default function CrosswordPreview() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-2xl px-4 sm:px-6 py-5 sm:py-8 space-y-4 sm:space-y-6">
+      <div className="mx-auto w-full max-w-6xl px-3 sm:px-6 py-5 sm:py-8 space-y-4 sm:space-y-6">
         {personalMessage && (
           <div
             className={cn(
@@ -81,16 +81,20 @@ export default function CrosswordPreview() {
           </div>
         )}
 
-        <div>
-          <p className="text-[10px] sm:text-xs font-medium text-muted-foreground mb-2 sm:mb-3">
-            Click a cell, then type. Click again to switch direction.
-          </p>
-          <InteractivePreviewGrid grid={grid} />
-        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 sm:gap-6">
+          <div className="lg:col-span-3">
+            <p className="text-[10px] sm:text-xs font-medium text-muted-foreground mb-2 sm:mb-3">
+              Click a cell, then type. Click again to switch direction.
+            </p>
+            <InteractivePreviewGrid grid={grid} />
+          </div>
 
-        <div className="pt-3 sm:pt-4 border-t border-border">
-          <p className="text-xs sm:text-sm font-semibold mb-2 sm:mb-3">Clues</p>
-          <ClueList placedWords={grid.placedWords} />
+          <div className="lg:col-span-2">
+            <div className="rounded-2xl border border-border bg-background p-4 sm:p-5">
+              <p className="text-xs sm:text-sm font-semibold mb-2 sm:mb-3">Clues</p>
+              <ClueList placedWords={grid.placedWords} />
+            </div>
+          </div>
         </div>
       </div>
     </div>

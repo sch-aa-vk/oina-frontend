@@ -19,7 +19,7 @@ export function PreviewModal({
 }: PreviewModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50 backdrop-blur-sm">
-      <div className="bg-background rounded-t-2xl sm:rounded-3xl border border-border shadow-2xl w-full sm:max-w-2xl max-h-[90dvh] sm:max-h-[85vh] overflow-y-auto">
+      <div className="bg-background rounded-t-2xl sm:rounded-3xl border border-border shadow-2xl w-full sm:max-w-5xl max-h-[90dvh] sm:max-h-[88vh] overflow-y-auto">
         <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-border flex items-center justify-between sticky top-0 bg-background/95 backdrop-blur-sm z-10 gap-2">
           <div className="min-w-0">
             <p className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider">

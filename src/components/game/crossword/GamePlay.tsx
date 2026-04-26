@@ -71,6 +71,26 @@ export function GamePlay({
     return lettersOnly.slice(-1).toLocaleUpperCase();
   };
 
+  const getCellDirections = useCallback(
+    (r: number, c: number): Direction[] => {
+      const directions = new Set<Direction>();
+
+      for (const pw of grid.placedWords) {
+        const dr = pw.direction === "down" ? 1 : 0;
+        const dc = pw.direction === "across" ? 1 : 0;
+        for (let i = 0; i < pw.word.length; i++) {
+          if (pw.row + dr * i === r && pw.col + dc * i === c) {
+            directions.add(pw.direction);
+            break;
+          }
+        }
+      }
+
+      return Array.from(directions);
+    },
+    [grid.placedWords]
+  );
+
   const getHighlightedCells = useCallback((): Set<string> => {
     if (!selectedCell) return new Set();
     const { r, c } = selectedCell;
@@ -118,9 +138,21 @@ export function GamePlay({
 
   const handleCellClick = (r: number, c: number): void => {
     if (grid.cells[r][c].isBlack) return;
-    if (selectedCell?.r === r && selectedCell?.c === c)
-      setSelectedDir((d) => (d === "across" ? "down" : "across"));
-    else setSelectedCell({ r, c });
+    const directions = getCellDirections(r, c);
+    if (directions.length === 0) return;
+
+    if (selectedCell?.r === r && selectedCell?.c === c) {
+      if (directions.includes("across") && directions.includes("down")) {
+        setSelectedDir((d) => (d === "across" ? "down" : "across"));
+      } else {
+        setSelectedDir(directions[0]);
+      }
+    } else {
+      setSelectedCell({ r, c });
+      setSelectedDir((currentDir) =>
+        directions.includes(currentDir) ? currentDir : directions[0]
+      );
+    }
     focusCell(r, c);
   };
 
@@ -191,10 +223,10 @@ export function GamePlay({
 
   if (isComplete) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950 dark:to-teal-950 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-muted/30 flex items-center justify-center p-4">
         <div className="bg-background rounded-3xl border border-border shadow-2xl p-8 max-w-md w-full space-y-6">
           <div className="text-center space-y-2">
-            <div className="text-6xl font-bold bg-gradient-to-r from-emerald-500 to-teal-500 bg-clip-text text-transparent">
+            <div className="text-6xl font-bold bg-linear-to-r from-emerald-500 to-teal-500 bg-clip-text text-transparent">
               {correctWordCount}/{grid.placedWords.length}
             </div>
             <p className="text-lg font-semibold">Crossword Complete!</p>
@@ -245,7 +277,7 @@ export function GamePlay({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950 dark:to-teal-950 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-muted/30 flex items-center justify-center p-4">
       <div className="bg-background rounded-3xl border border-border shadow-2xl w-full max-w-3xl max-h-[95vh] overflow-y-auto">
         <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm px-4 sm:px-6 py-4 border-b border-border">
           <div>
@@ -316,7 +348,7 @@ export function GamePlay({
                         className={cn(
                           "relative flex items-center justify-center cursor-pointer transition-colors",
                           cell.isBlack
-                            ? "bg-foreground cursor-default"
+                            ? "bg-[#EFF6FF] cursor-default"
                             : isCorrect
                               ? "bg-emerald-100 dark:bg-emerald-900/40"
                             : isSelected

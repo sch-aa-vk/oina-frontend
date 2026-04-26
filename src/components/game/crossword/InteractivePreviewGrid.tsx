@@ -26,6 +26,26 @@ export function InteractivePreviewGrid({ grid }: { grid: CrosswordGrid }) {
     return lettersOnly.slice(-1).toLocaleUpperCase();
   };
 
+  const getCellDirections = useCallback(
+    (r: number, c: number): Direction[] => {
+      const directions = new Set<Direction>();
+
+      for (const pw of grid.placedWords) {
+        const dr = pw.direction === "down" ? 1 : 0;
+        const dc = pw.direction === "across" ? 1 : 0;
+        for (let i = 0; i < pw.word.length; i++) {
+          if (pw.row + dr * i === r && pw.col + dc * i === c) {
+            directions.add(pw.direction);
+            break;
+          }
+        }
+      }
+
+      return Array.from(directions);
+    },
+    [grid.placedWords]
+  );
+
   const getHighlightedCells = useCallback((): Set<string> => {
     if (!selectedCell) return new Set();
     const { r, c } = selectedCell;
@@ -73,9 +93,21 @@ export function InteractivePreviewGrid({ grid }: { grid: CrosswordGrid }) {
 
   const handleCellClick = (r: number, c: number): void => {
     if (grid.cells[r][c].isBlack) return;
-    if (selectedCell?.r === r && selectedCell?.c === c)
-      setSelectedDir((d) => (d === "across" ? "down" : "across"));
-    else setSelectedCell({ r, c });
+    const directions = getCellDirections(r, c);
+    if (directions.length === 0) return;
+
+    if (selectedCell?.r === r && selectedCell?.c === c) {
+      if (directions.includes("across") && directions.includes("down")) {
+        setSelectedDir((d) => (d === "across" ? "down" : "across"));
+      } else {
+        setSelectedDir(directions[0]);
+      }
+    } else {
+      setSelectedCell({ r, c });
+      setSelectedDir((currentDir) =>
+        directions.includes(currentDir) ? currentDir : directions[0]
+      );
+    }
     focusCell(r, c);
   };
 
@@ -171,7 +203,7 @@ export function InteractivePreviewGrid({ grid }: { grid: CrosswordGrid }) {
                   className={cn(
                     "relative flex items-center justify-center cursor-pointer transition-colors",
                     cell.isBlack
-                      ? "bg-foreground cursor-default"
+                      ? "bg-[#EFF6FF] cursor-default"
                       : isCorrect
                       ? "bg-emerald-100 dark:bg-emerald-900/40"
                       : isSelected

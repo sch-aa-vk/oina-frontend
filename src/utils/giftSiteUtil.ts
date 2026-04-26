@@ -76,6 +76,11 @@ Generate a complete, self-contained HTML gift webpage for the recipient describe
 - All JavaScript must be embedded inside <script> tags just before </body>.
 - No external images or external CSS files.
 - Google Fonts may be loaded via CSS @import inside a <style> block — never via a <link> tag.
+- Do NOT include any year numbers anywhere in the output (no "2024", "2025", "2026", etc.).
+
+## YEAR / DATE RULE
+- Never write any calendar year (e.g. 2024, 2025, 2026) anywhere in the HTML, CSS, or JavaScript.
+- If the occasion or message implies a year, omit it silently.
 
 ## VISUAL QUALITY CHECKLIST (satisfy every item)
 - Load 2–3 Google Fonts via @import and use them intentionally (display vs body vs accent).

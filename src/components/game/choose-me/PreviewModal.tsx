@@ -39,9 +39,11 @@ export function PreviewModal({
       progress={`${currentQ + 1} / ${questions.length}`}
       progressPercent={((currentQ + 1) / questions.length) * 100}
       theme={CHOOSE_ME_THEME}
+      maxWidth="sm:max-w-5xl"
       onClose={onClose}
     >
       <div className="px-4 sm:px-6 py-4 sm:py-5">
+        <div className="mx-auto w-full max-w-3xl">
         <p className="text-sm sm:text-base font-semibold mb-3 sm:mb-4">
           {q?.question || "Your question here"}
         </p>
@@ -65,6 +67,7 @@ export function PreviewModal({
               </span>
             </button>
           ))}
+        </div>
         </div>
       </div>
     </PreviewModalShell>

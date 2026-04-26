@@ -64,9 +64,11 @@ export function PreviewModal({
       progress={`${currentIndex + 1} / ${puzzles.length}`}
       progressPercent={((currentIndex + 1) / puzzles.length) * 100}
       theme={GUESS_BY_EMOJI_THEME}
+      maxWidth="sm:max-w-5xl"
       onClose={onClose}
     >
-      <div className="px-4 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-5">
+      <div className="px-4 sm:px-6 py-4 sm:py-6">
+        <div className="mx-auto w-full max-w-3xl space-y-4 sm:space-y-5">
         <div className="flex justify-between items-center">
           <Badge
             variant="outline"
@@ -166,6 +168,7 @@ export function PreviewModal({
             {isLast ? "Finish" : "Next puzzle →"}
           </Button>
         )}
+        </div>
       </div>
     </PreviewModalShell>
   );
