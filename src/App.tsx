@@ -1,35 +1,66 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { lazy, Suspense } from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/contexts/AuthProvider";
+import MainLayout from "@/layouts/MainLayout";
+import AuthLayout from "@/layouts/AuthLayout";
+import ProtectedRoute from "@/components/ProtectedRoute";
+import GuestRoute from "@/components/GuestRoute";
+import GiftGenerator from "@/pages/GiftGenerator";
 
-function App() {
-  const [count, setCount] = useState(0)
+const Home = lazy(() => import("@/pages/Home"));
+const GiftViewer = lazy(() => import("@/pages/GiftViewer"));
+const Profile = lazy(() => import("@/pages/Profile"));
+const Login = lazy(() => import("@/pages/auth/Login"));
+const Register = lazy(() => import("@/pages/auth/Register"));
+const VerifyEmail = lazy(() => import("@/pages/auth/VerifyEmail"));
+const ForgotPassword = lazy(() => import("@/pages/auth/ForgotPassword"));
+const ResetPassword = lazy(() => import("@/pages/auth/ResetPassword"));
+const ChooseMe = lazy(() => import("@/pages/games/ChooseMe"));
+const ChooseMePreview = lazy(() => import("@/pages/games/ChooseMePreview"));
+const GuessByEmoji = lazy(() => import("@/pages/games/GuessByEmoji"));
+const GuessByEmojiPreview = lazy(() => import("@/pages/games/GuessByEmojiPreview"));
+const Crossword = lazy(() => import("@/pages/games/Crossword"));
+const CrosswordPreview = lazy(() => import("@/pages/games/CrosswordPreview"));
+const GameDetails = lazy(() => import("@/pages/games/GameDetails"));
 
+export default function App() {
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
-}
+    <BrowserRouter>
+      <AuthProvider>
+        <Suspense>
+          <Routes>
+            <Route element={<MainLayout />}>
+              <Route path="/" element={<Home />} />
+              <Route path="/games/:gameId" element={<GameDetails />} />
+            </Route>
 
-export default App
+            <Route element={<ProtectedRoute />}>
+              <Route element={<MainLayout />}>
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/create/choose-me" element={<ChooseMe />} />
+                <Route path="/create/choose-me/preview" element={<ChooseMePreview />} />
+                <Route path="/create/guess-by-emoji" element={<GuessByEmoji />} />
+                <Route path="/create/guess-by-emoji/preview" element={<GuessByEmojiPreview />} />
+                <Route path="/create/crossword" element={<Crossword />} />
+                <Route path="/create/crossword/preview" element={<CrosswordPreview />} />
+                <Route path="/gift-generator" element={<GiftGenerator />} />
+              </Route>
+            </Route>
+
+            <Route element={<GuestRoute />}>
+              <Route element={<AuthLayout />}>
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/verify-email" element={<VerifyEmail />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
+              </Route>
+            </Route>
+
+            <Route path="/gift/:giftId" element={<GiftViewer />} />
+          </Routes>
+        </Suspense>
+      </AuthProvider>
+    </BrowserRouter>
+  );
+}
