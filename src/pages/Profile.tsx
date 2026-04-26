@@ -15,6 +15,7 @@ import {
   LogOut,
   Settings,
   Undo2,
+  Trash2,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -29,6 +30,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
 import { gamesService } from "@/services/games";
+import {
+  Popover,
+  PopoverClose,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { usersService } from "@/services/users";
 import { giftSiteService } from "@/services/giftSite";
 import type { AvatarContentType } from "@/services/users";
@@ -79,6 +86,8 @@ export default function Profile() {
   const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
 
   const [restoringGameId, setRestoringGameId] = useState<string | null>(null);
+  const [deletingGameId, setDeletingGameId] = useState<string | null>(null);
+  const [openDeletePopoverId, setOpenDeletePopoverId] = useState<string | null>(null);
   const [gameActionError, setGameActionError] = useState<string>("");
 
   const [gifts, setGifts] = useState<MyGiftItem[]>(cachedGifts ?? []);
@@ -169,6 +178,24 @@ export default function Profile() {
       setGameActionError(gamesService.mapError(err).message);
     } finally {
       setRestoringGameId(null);
+    }
+  };
+
+  const handleDeleteGame = async (gameId: string) => {
+    setDeletingGameId(gameId);
+    setGameActionError("");
+    try {
+      await gamesService.deleteGame(gameId);
+      const updated = games.map((g) =>
+        g.gameId === gameId ? { ...g, isDeleted: true } : g,
+      );
+      setGames(updated);
+      appCache.set("my-games", updated);
+    } catch (err) {
+      setGameActionError(gamesService.mapError(err).message);
+    } finally {
+      setDeletingGameId(null);
+      setOpenDeletePopoverId(null);
     }
   };
 
@@ -430,107 +457,145 @@ export default function Profile() {
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {games.map((game) => (
-                <div key={game.gameId} className="relative">
-                  <Link
-                    to={getEditPath(game)}
-                    className={cn(
-                      "group rounded-xl border bg-card overflow-hidden hover:shadow-md transition-all duration-300 block",
-                      "ring-1 ring-black/5 dark:ring-white/5",
-                      "hover:ring-2 hover:ring-primary/30 hover:-translate-y-0.5",
-                    )}
-                  >
-                    <div className="h-36 relative overflow-hidden">
-                      {game.thumbnail ? (
-                        <img
-                          src={game.thumbnail}
-                          alt={game.title}
-                          className={`absolute inset-0 w-full h-full object-cover${game.isDeleted ? " opacity-60" : ""}`}
-                        />
-                      ) : (
-                        <>
-                          <div
-                            className={cn(
-                              "absolute inset-0 bg-linear-to-br opacity-60",
-                              gradientByType[game.type],
-                              game.isDeleted && "opacity-40",
+                <div
+                  key={game.gameId}
+                  className={cn(
+                    "group rounded-xl border bg-card overflow-hidden transition-all duration-300",
+                    "ring-1 ring-black/5 dark:ring-white/5",
+                    !game.isDeleted && "hover:shadow-md hover:ring-2 hover:ring-primary/30 hover:-translate-y-0.5",
+                  )}
+                >
+                  {(() => {
+                    const cardBody = (
+                      <>
+                        <div className="h-36 relative overflow-hidden">
+                          {game.thumbnail ? (
+                            <img
+                              src={game.thumbnail}
+                              alt={game.title}
+                              className={`absolute inset-0 w-full h-full object-cover${game.isDeleted ? " opacity-60" : ""}`}
+                            />
+                          ) : (
+                            <>
+                              <div
+                                className={cn(
+                                  "absolute inset-0 bg-linear-to-br opacity-60",
+                                  gradientByType[game.type],
+                                  game.isDeleted && "opacity-40",
+                                )}
+                              />
+                              <div className="absolute inset-0 bg-muted/40 dark:bg-muted/60" />
+                              <div
+                                className={cn(
+                                  "absolute inset-0 flex items-center justify-center text-4xl select-none",
+                                  game.isDeleted ? "opacity-40" : "opacity-60",
+                                )}
+                              >
+                                {gameEmoji[game.type]}
+                              </div>
+                            </>
+                          )}
+                          <div className="absolute top-3 right-3 flex items-center gap-1.5">
+                            {game.isDeleted && (
+                              <Badge variant="destructive" className="text-xs">
+                                Deleted
+                              </Badge>
                             )}
-                          />
-                          <div className="absolute inset-0 bg-muted/40 dark:bg-muted/60" />
-                          <div
-                            className={cn(
-                              "absolute inset-0 flex items-center justify-center text-4xl select-none",
-                              game.isDeleted ? "opacity-40" : "opacity-60",
-                            )}
-                          >
-                            {gameEmoji[game.type]}
+                            <Badge variant="secondary" className="text-xs">
+                              {visibilityLabel[game.visibility]}
+                            </Badge>
                           </div>
-                        </>
-                      )}
-                      <div className="absolute top-3 right-3 flex items-center gap-1.5">
-                        {game.isDeleted && (
-                          <Badge variant="destructive" className="text-xs">
-                            Deleted
-                          </Badge>
-                        )}
-                        <Badge variant="secondary" className="text-xs">
-                          {visibilityLabel[game.visibility]}
-                        </Badge>
-                      </div>
-                    </div>
+                        </div>
 
-                    <div className="p-3 flex flex-col gap-2">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="font-medium text-sm truncate">
-                          {game.title}
-                        </span>
-                        <Badge variant="outline" className="text-[10px]">
-                          {gameTypeLabel[game.type]}
-                        </Badge>
-                      </div>
+                        <div className="p-3 flex flex-col gap-2">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-medium text-sm truncate">
+                              {game.title}
+                            </span>
+                            <Badge variant="outline" className="text-[10px]">
+                              {gameTypeLabel[game.type]}
+                            </Badge>
+                          </div>
 
-                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Gamepad2 className="size-3" />
-                          {game.playCount}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Eye className="size-3" />
-                          {game.viewCount}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Heart className="size-3" />
-                          {game.likeCount}
-                        </span>
-                        <span className="flex items-center gap-1 ml-auto">
-                          <Clock className="size-3" />
-                          {new Date(game.updatedAt).toLocaleDateString()}
-                        </span>
-                      </div>
+                          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <Gamepad2 className="size-3" />
+                              {game.playCount}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Eye className="size-3" />
+                              {game.viewCount}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Heart className="size-3" />
+                              {game.likeCount}
+                            </span>
+                            <span className="flex items-center gap-1 ml-auto">
+                              <Clock className="size-3" />
+                              {new Date(game.updatedAt).toLocaleDateString()}
+                            </span>
+                          </div>
+                        </div>
+                      </>
+                    );
+                    return game.isDeleted ? (
+                      <div className="block">{cardBody}</div>
+                    ) : (
+                      <Link to={getEditPath(game)} className="block">{cardBody}</Link>
+                    );
+                  })()}
 
-                      <div className="flex items-center gap-2 pt-1 border-t border-border/50">
-                        {game.isDeleted ? (
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              handleRestoreGame(game.gameId);
-                            }}
-                            disabled={restoringGameId === game.gameId}
-                            className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
-                          >
-                            <Undo2 className="size-3" />
-                            {restoringGameId === game.gameId
-                              ? "Restoring..."
-                              : "Restore"}
-                          </button>
-                        ) : (
-                          <span className="text-[10px] text-muted-foreground ml-auto">
-                            Click card to edit
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </Link>
+                  <div className="flex items-center gap-2 px-3 pb-3 border-t border-border/50 pt-2 mx-3">
+                    {game.isDeleted ? (
+                      <button
+                        onClick={() => handleRestoreGame(game.gameId)}
+                        disabled={restoringGameId === game.gameId}
+                        className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50 cursor-pointer"
+                      >
+                        <Undo2 className="size-3" />
+                        {restoringGameId === game.gameId ? "Restoring..." : "Restore"}
+                      </button>
+                    ) : (
+                      <>
+                        <span className="text-[10px] text-muted-foreground">
+                          Click to edit
+                        </span>
+                        <Popover
+                          open={openDeletePopoverId === game.gameId}
+                          onOpenChange={(open) =>
+                            setOpenDeletePopoverId(open ? game.gameId : null)
+                          }
+                        >
+                          <PopoverTrigger asChild>
+                            <button className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-destructive transition-colors ml-auto cursor-pointer">
+                              <Trash2 className="size-3" />
+                              Delete
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent>
+                            <p className="text-sm font-medium mb-1">Delete this game?</p>
+                            <p className="text-xs text-muted-foreground mb-3">
+                              It will be hidden. You can restore it later.
+                            </p>
+                            <div className="flex justify-end gap-2">
+                              <PopoverClose asChild>
+                                <Button variant="outline" size="sm" style={{ cursor: "pointer" }}>Cancel</Button>
+                              </PopoverClose>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => handleDeleteGame(game.gameId)}
+                                disabled={deletingGameId === game.gameId}
+                                style={{ cursor: "pointer" }}
+                              >
+                                {deletingGameId === game.gameId ? "Deleting..." : "Delete"}
+                              </Button>
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                      </>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
