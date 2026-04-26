@@ -13,12 +13,14 @@ import {
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSidebar } from "@/hooks/use-sidebar";
 import { gamesService } from "@/services/games";
 import type { GameResultResponse } from "@/types/games";
 import { NavLink, useNavigate } from "react-router-dom";
 
 export function NavProjects() {
   const { user, isLoading } = useAuth();
+  const { isMobile, setOpenMobile } = useSidebar();
   const navigate = useNavigate();
 
   const cached = user ? appCache.get<GameResultResponse[]>("game-history", CACHE_TTL.PERSONAL) : null;
@@ -87,7 +89,10 @@ export function NavProjects() {
             </p>
           </div>
           <Button
-            onClick={() => navigate("/login")}
+            onClick={() => {
+              if (isMobile) setOpenMobile(false);
+              navigate("/login");
+            }}
             className="w-full h-8 text-xs rounded-lg cursor-pointer"
           >
             Sign in
@@ -134,7 +139,12 @@ export function NavProjects() {
           {quickLinks.map(({ label, href, icon: Icon, aiPowered }) => (
             <SidebarMenuItem key={href}>
               <SidebarMenuButton asChild className="hover:bg-neutral-200">
-                <NavLink to={href}>
+                <NavLink
+                  to={href}
+                  onClick={() => {
+                    if (isMobile) setOpenMobile(false);
+                  }}
+                >
                   <Icon className="w-4 h-4" />
                   <span>{label}</span>
                   {aiPowered && (
@@ -177,7 +187,12 @@ export function NavProjects() {
                 className="hover:bg-neutral-200 rounded-lg cursor-pointer"
               >
                 <SidebarMenuButton asChild className="hover:bg-neutral-200">
-                  <NavLink to={`/games/${result.gameId}`}>
+                  <NavLink
+                    to={`/games/${result.gameId}`}
+                    onClick={() => {
+                      if (isMobile) setOpenMobile(false);
+                    }}
+                  >
                     <span className="truncate">
                       {result.gameTitle ?? "Deleted game"}
                     </span>
