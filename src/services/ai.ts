@@ -4,6 +4,7 @@ import type {
   GenerateEmojiRequest, GenerateEmojiResponse,
   GenerateCrosswordRequest, GenerateCrosswordResponse,
   SuggestThemeRequest, SuggestThemeResponse,
+  GenerateOutcomesRequest, GenerateOutcomesResponse,
 } from '../types/ai';
 
 const aiClient = axios.create({
@@ -23,4 +24,7 @@ export const aiService = {
 
   suggestTheme: (data: SuggestThemeRequest) =>
     aiClient.post<SuggestThemeResponse>('/ai/suggest-theme', data).then(r => r.data),
+
+  generateOutcomes: (data: GenerateOutcomesRequest) =>
+    aiClient.post<GenerateOutcomesResponse>('/ai/generate-outcomes', data).then(r => r.data),
 };

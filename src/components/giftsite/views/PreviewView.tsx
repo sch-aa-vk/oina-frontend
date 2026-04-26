@@ -142,6 +142,7 @@ export default function PreviewView({
               aria-hidden="true"
             />
             <p className="text-sm text-muted-foreground">Generating your gift site — this takes up to a minute...</p>
+            <p className="text-sm text-muted-foreground">Please do not reload or navigate away.</p>
           </div>
         ) : hasGeneratedHtml ? (
           <div className="overflow-hidden rounded-lg border bg-background">

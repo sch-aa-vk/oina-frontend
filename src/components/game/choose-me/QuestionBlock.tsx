@@ -2,11 +2,12 @@ import { Plus, Trash2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { OptionCard } from "./OptionCard";
-import type { Question, QuestionField, GameOption, OptionField } from "./types";
+import type { Question, QuestionField, GameOption, OptionField, GameOutcome } from "./types";
 
 interface QuestionBlockProps {
   question: Question;
   qIndex: number;
+  outcomes: GameOutcome[];
   onChange: (
     qIndex: number,
     field: QuestionField,
@@ -19,6 +20,7 @@ interface QuestionBlockProps {
 export function QuestionBlock({
   question,
   qIndex,
+  outcomes,
   onChange,
   onRemove,
   totalQuestions,
@@ -27,13 +29,13 @@ export function QuestionBlock({
     if (question.options.length >= 6) return;
     onChange(qIndex, "options", [
       ...question.options,
-      { text: "", emoji: "", isCorrect: false },
+      { text: "", emoji: "", outcomeId: "" },
     ]);
   };
   const updateOption = (
     optIndex: number,
     field: OptionField,
-    value: string | boolean
+    value: string
   ): void => {
     onChange(
       qIndex,
@@ -93,6 +95,7 @@ export function QuestionBlock({
             key={i}
             option={opt}
             index={i}
+            outcomes={outcomes}
             onChange={updateOption}
             onRemove={removeOption}
             isOnly={question.options.length === 1}

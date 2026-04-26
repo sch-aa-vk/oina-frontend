@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import type { Question } from "./types";
+import type { Question, GameOutcome } from "./types";
 import type { Recipient } from "@/components/game";
 
 function shuffleArray<T>(array: T[]): T[] {
@@ -15,14 +15,16 @@ function shuffleArray<T>(array: T[]): T[] {
 
 interface GamePlayProps {
   questions: Question[];
+  outcomes: GameOutcome[];
   recipient: Recipient;
   personalMessage: string;
   shuffle: boolean;
-  onComplete?: (score: number, total: number) => void;
+  onComplete?: (outcomeId: string) => void;
 }
 
 export function GamePlay({
   questions,
+  outcomes,
   recipient,
   personalMessage,
   shuffle,
@@ -30,8 +32,10 @@ export function GamePlay({
 }: GamePlayProps) {
   const [currentQ, setCurrentQ] = useState<number>(0);
   const [selected, setSelected] = useState<number | null>(null);
-  const [score, setScore] = useState<number>(0);
   const [isComplete, setIsComplete] = useState<boolean>(false);
+  const [winner, setWinner] = useState<GameOutcome | null>(null);
+
+  const answersRef = useRef<{ outcomeId: string }[]>([]);
 
   const [shuffledQuestions] = useState<Question[]>(() =>
     shuffle ? shuffleArray(questions) : questions
@@ -43,43 +47,44 @@ export function GamePlay({
     if (selected !== null) return;
     setSelected(optIndex);
 
-    if (q.options[optIndex]?.isCorrect) {
-      setScore((s) => s + 1);
-    }
+    const chosenOutcomeId = q.options[optIndex]?.outcomeId ?? "";
+    const nextAnswers = [...answersRef.current, { outcomeId: chosenOutcomeId }];
+    answersRef.current = nextAnswers;
 
     setTimeout(() => {
       if (currentQ < shuffledQuestions.length - 1) {
         setCurrentQ((p) => p + 1);
         setSelected(null);
       } else {
-        setIsComplete(true);
-        onComplete?.(
-          q.options[optIndex]?.isCorrect ? score + 1 : score,
-          shuffledQuestions.length
+        const votes: Record<string, number> = {};
+        nextAnswers.forEach(({ outcomeId }) => {
+          if (outcomeId) votes[outcomeId] = (votes[outcomeId] || 0) + 1;
+        });
+        const winnerOutcome = outcomes.reduce((best, outcome) =>
+          (votes[outcome.id] ?? 0) > (votes[best.id] ?? 0) ? outcome : best
         );
+        setWinner(winnerOutcome);
+        setIsComplete(true);
+        onComplete?.(winnerOutcome.id);
       }
     }, 800);
   };
 
-  if (isComplete) {
-    const finalScore = q.options[selected!]?.isCorrect ? score + 1 : score;
+  if (isComplete && winner) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-violet-50 to-pink-50 dark:from-violet-950 dark:to-pink-950 flex items-center justify-center p-4">
         <div className="bg-background rounded-3xl border border-border shadow-2xl p-8 max-w-md w-full space-y-6">
-          <div className="text-center space-y-2">
-            <div className="text-6xl font-bold bg-gradient-to-r from-violet-600 to-pink-600 bg-clip-text text-transparent">
-              {finalScore}/{shuffledQuestions.length}
-            </div>
-            <p className="text-lg font-semibold">Game Complete!</p>
-            <p className="text-sm text-muted-foreground">
-              {finalScore === shuffledQuestions.length
-                ? "Perfect score! 🎉"
-                : finalScore >= shuffledQuestions.length * 0.8
-                  ? "Great job! 🌟"
-                  : finalScore >= shuffledQuestions.length * 0.5
-                    ? "Good effort! 💪"
-                    : "Keep practicing! 🎮"}
+          <div className="text-center space-y-3">
+            {winner.emoji && (
+              <div className="text-7xl">{winner.emoji}</div>
+            )}
+            <p className="text-sm text-muted-foreground uppercase tracking-wider font-medium">
+              Your result
             </p>
+            <p className="text-2xl font-bold">{winner.title}</p>
+            {winner.description && (
+              <p className="text-sm text-muted-foreground">{winner.description}</p>
+            )}
           </div>
 
           {personalMessage && (
@@ -151,11 +156,7 @@ export function GamePlay({
                   selected === null &&
                     "hover:border-primary/50 hover:bg-primary/5 active:scale-[0.98]",
                   selected === i &&
-                    opt.isCorrect &&
-                    "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40",
-                  selected === i &&
-                    !opt.isCorrect &&
-                    "border-red-400 bg-red-50 dark:bg-red-950/40",
+                    "border-violet-500 bg-violet-50 dark:bg-violet-950/40",
                   selected !== null && selected !== i && "opacity-50"
                 )}
               >
@@ -163,11 +164,6 @@ export function GamePlay({
                 <span className="text-sm font-medium flex-1 min-w-0">
                   {opt.text}
                 </span>
-                {selected === i && (
-                  <span className="text-sm shrink-0">
-                    {opt.isCorrect ? "✅" : "❌"}
-                  </span>
-                )}
               </button>
             ))}
           </div>

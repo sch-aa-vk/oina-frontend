@@ -131,8 +131,9 @@ export interface GameHistoryResponse {
 }
 
 export interface RecordGameResultPayload {
-  score: number;
-  maxScore: number;
+  score?: number;
+  maxScore?: number;
+  outcomeId?: string;
   duration: number;
   completionStatus: CompletionStatus;
 }

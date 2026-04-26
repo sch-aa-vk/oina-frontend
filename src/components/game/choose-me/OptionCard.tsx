@@ -1,17 +1,14 @@
-import { Check, Trash2, GripVertical } from "lucide-react";
+import { Trash2, GripVertical } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { EmojiPickerButton } from "./EmojiPickerButton";
-import type { GameOption, OptionField } from "./types";
+import type { GameOption, OptionField, GameOutcome } from "./types";
 
 interface OptionCardProps {
   option: GameOption;
   index: number;
-  onChange: (
-    index: number,
-    field: OptionField,
-    value: string | boolean
-  ) => void;
+  outcomes: GameOutcome[];
+  onChange: (index: number, field: OptionField, value: string) => void;
   onRemove: (index: number) => void;
   isOnly: boolean;
 }
@@ -19,17 +16,20 @@ interface OptionCardProps {
 export function OptionCard({
   option,
   index,
+  outcomes,
   onChange,
   onRemove,
   isOnly,
 }: OptionCardProps) {
+  const selectedOutcome = outcomes.find((o) => o.id === option.outcomeId);
+
   return (
     <div
       className={cn(
         "group flex items-start gap-2 sm:gap-3 p-3 sm:p-4 rounded-xl sm:rounded-2xl border bg-card transition-all duration-200",
         "hover:border-primary/30 hover:shadow-sm",
-        option.isCorrect &&
-          "border-emerald-500/40 bg-emerald-50/50 dark:bg-emerald-950/20"
+        option.outcomeId &&
+          "border-violet-300/50 bg-violet-50/30 dark:bg-violet-950/10"
       )}
     >
       <div className="mt-2 sm:mt-2.5 text-muted-foreground/40 cursor-grab group-hover:text-muted-foreground/70 transition-colors hidden sm:block">
@@ -46,27 +46,25 @@ export function OptionCard({
           onChange={(e) => onChange(index, "text", e.target.value)}
           className="border-0 bg-transparent px-0 text-xs sm:text-sm font-medium placeholder:text-muted-foreground/50 focus-visible:ring-0 h-auto py-1"
         />
-        {option.isCorrect && (
-          <span className="text-[10px] sm:text-xs text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1">
-            <Check className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-            Correct answer
-          </span>
-        )}
-      </div>
-      <div className="flex items-center gap-0.5 sm:gap-1 mt-1 sm:mt-1.5">
-        <button
-          type="button"
-          title="Mark as correct answer"
-          onClick={() => onChange(index, "isCorrect", !option.isCorrect)}
+        <select
+          value={option.outcomeId}
+          onChange={(e) => onChange(index, "outcomeId", e.target.value)}
           className={cn(
-            "w-6 h-6 sm:w-7 sm:h-7 rounded-md sm:rounded-lg flex items-center justify-center transition-colors",
-            option.isCorrect
-              ? "bg-emerald-500 text-white"
-              : "bg-muted text-muted-foreground hover:bg-emerald-100 hover:text-emerald-600 dark:hover:bg-emerald-950"
+            "text-[10px] sm:text-xs rounded-lg border px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-primary transition-colors bg-transparent",
+            selectedOutcome
+              ? "border-violet-300 text-violet-700 dark:text-violet-300 dark:border-violet-700"
+              : "border-dashed border-border text-muted-foreground"
           )}
         >
-          <Check className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-        </button>
+          <option value="">— pick outcome —</option>
+          {outcomes.map((o) => (
+            <option key={o.id} value={o.id}>
+              {o.emoji ? `${o.emoji} ` : ""}{o.title || o.id}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="flex items-center gap-0.5 sm:gap-1 mt-1 sm:mt-1.5">
         {!isOnly && (
           <button
             type="button"

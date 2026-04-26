@@ -7,7 +7,7 @@ import type { GameTheme } from "./types";
 interface GameTopBarProps {
   step: number;
   onStepChange: (step: number) => void;
-  stepLabels: [string, string, string];
+  stepLabels: string[];
   previewDisabled?: boolean;
   onPreview: () => void;
   canPublish: boolean;
@@ -40,16 +40,19 @@ export function GameTopBar({
       <div className="mx-auto px-3 sm:px-6 h-12 sm:h-16 flex items-center justify-between gap-2 sm:gap-4">
         <div className="flex items-center gap-2 sm:gap-4 min-w-0">
           <div className="flex items-center gap-1.5 sm:gap-3">
-            {([1, 2, 3] as const).map((s, i) => (
-              <div key={s} className="flex items-center gap-1.5 sm:gap-3">
-                <button onClick={() => onStepChange(s)}>
-                  <StepBadge step={s} label={stepLabels[i]} current={step} />
-                </button>
-                {i < 2 && (
-                  <div className="w-3 sm:w-6 h-px bg-border hidden xs:block" />
-                )}
-              </div>
-            ))}
+            {stepLabels.map((label, i) => {
+              const s = i + 1;
+              return (
+                <div key={s} className="flex items-center gap-1.5 sm:gap-3">
+                  <button onClick={() => onStepChange(s)}>
+                    <StepBadge step={s} label={label} current={step} />
+                  </button>
+                  {i < stepLabels.length - 1 && (
+                    <div className="w-3 sm:w-6 h-px bg-border hidden xs:block" />
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
 
