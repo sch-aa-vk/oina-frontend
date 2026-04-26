@@ -130,7 +130,7 @@ export function buildCrosswordGrid(
           }
         }
     candidates.sort((a, b) => b.score - a.score);
-    // When a seed is given, shuffle within each score tier so rebuild yields a different layout
+
     const orderedCandidates = rand
       ? (() => {
           const result: typeof candidates = [];

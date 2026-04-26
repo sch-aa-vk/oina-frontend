@@ -7,8 +7,8 @@ const store = new Map<string, CacheEntry<unknown>>();
 const HISTORY_REFRESH_EVENT = "app:history-refresh";
 
 export const CACHE_TTL = {
-  PERSONAL: 2 * 60 * 1000,  // 2 minutes for user-specific data
-  PUBLIC: 5 * 60 * 1000,    // 5 minutes for public feeds
+  PERSONAL: 2 * 60 * 1000,
+  PUBLIC: 5 * 60 * 1000,
 } as const;
 
 export const appCache = {

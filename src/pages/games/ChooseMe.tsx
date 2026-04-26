@@ -405,7 +405,6 @@ export default function ChooseMe() {
       />
 
       <div className="mx-auto px-3 sm:px-6 py-5 sm:py-8 space-y-4 sm:space-y-6">
-        {/* Step 1: Recipient */}
         {step === 1 && (
           <RecipientStep
             recipient={recipient}
@@ -420,7 +419,6 @@ export default function ChooseMe() {
           />
         )}
 
-        {/* Step 2: Outcomes & Questions */}
         {step === 2 && (
           <>
             <div className="space-y-1">
@@ -432,7 +430,6 @@ export default function ChooseMe() {
               </p>
             </div>
 
-            {/* Topic field */}
             <div className="space-y-1.5">
               <label className="text-xs sm:text-sm font-medium">
                 Topic <span className="text-muted-foreground font-normal">(helps AI generate better content)</span>
@@ -445,7 +442,6 @@ export default function ChooseMe() {
               />
             </div>
 
-            {/* Outcomes section */}
             <div className="space-y-3">
               <h2 className="text-base sm:text-lg font-semibold">Outcomes</h2>
               <p className="text-muted-foreground text-xs sm:text-sm -mt-1">
@@ -497,7 +493,6 @@ export default function ChooseMe() {
               <AddItemButton label="Add another outcome" onClick={addOutcome} />
             </div>
 
-            {/* Questions section */}
             <div className="space-y-3 pt-2">
               <div className="flex items-center justify-between">
                 <div>
@@ -566,7 +561,6 @@ export default function ChooseMe() {
           </>
         )}
 
-        {/* Step 3: Publish */}
         {step === 3 && (
           <>
             <SummaryCard

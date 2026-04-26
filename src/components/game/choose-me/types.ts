@@ -1,7 +1,7 @@
 export interface GameOutcome {
-  id: string;       // "outcome_0"
-  title: string;    // "Романтический ужин"
-  emoji: string;    // "🌹"
+  id: string;
+  title: string;
+  emoji: string;
   description?: string;
 }
 

@@ -137,7 +137,6 @@ export function GamePlay({
 
   return (
     <div className="max-w-lg mx-auto space-y-4 sm:space-y-5 pb-10 mt-10">
-      {/* Personal message — first puzzle only */}
       {personalMessage && (
         <div className="px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl border bg-orange-50 dark:bg-orange-950/30 border-orange-200/50 dark:border-orange-800/30">
           <p className="text-[10px] sm:text-xs font-medium text-orange-600 dark:text-orange-400 mb-0.5">
@@ -149,7 +148,6 @@ export function GamePlay({
         </div>
       )}
 
-      {/* Progress header */}
       <div className="space-y-2.5">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
@@ -179,7 +177,6 @@ export function GamePlay({
         </div>
       </div>
 
-      {/* Emoji display */}
       <div className={cn("rounded-2xl border p-2 sm:p-4", diffConfig.bg)}>
         <p
           className={cn(
@@ -201,7 +198,6 @@ export function GamePlay({
         </div>
       </div>
 
-      {/* Guess input or correct state */}
       {state !== "correct" ? (
         <div className="space-y-3">
           <div className="space-y-1.5">

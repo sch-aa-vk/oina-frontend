@@ -20,7 +20,7 @@ interface WordRowProps {
   onChange: (id: string, changes: Partial<CrosswordWord>) => void;
   onRemove: (id: string) => void;
   canRemove: boolean;
-  isPlaced: boolean | null; // null = grid not generated yet
+  isPlaced: boolean | null;
   onAiClue?: (wordId: string, word: string) => void;
   isAiLoadingClue?: boolean;
   onAiWord?: (wordId: string, clue: string) => void;

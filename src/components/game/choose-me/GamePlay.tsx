@@ -55,7 +55,6 @@ export function GamePlay({
       ...q,
       options: shuffleArray(q.options),
     }));
-  // round is intentionally included so Play Again re-shuffles
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shuffle, questions, round]);
 
@@ -157,7 +156,6 @@ export function GamePlay({
 
   return (
     <div className="max-w-lg mx-auto space-y-4 sm:space-y-5 pb-10 mt-10">
-      {/* Personal message — first question only */}
       {personalMessage && currentQ === 0 && (
         <div className="px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl border bg-pink-50 dark:bg-pink-950/30 border-pink-200/50 dark:border-pink-800/30">
           <p className="text-[10px] sm:text-xs font-medium text-pink-600 dark:text-pink-400 mb-0.5">
@@ -169,7 +167,6 @@ export function GamePlay({
         </div>
       )}
 
-      {/* Progress header */}
       <div className="space-y-2.5">
         <div className="min-w-0">
           <p className="text-xs text-muted-foreground uppercase tracking-wider truncate">
@@ -188,7 +185,6 @@ export function GamePlay({
         </div>
       </div>
 
-      {/* Question card */}
       <div className="rounded-2xl border p-4 sm:p-5 bg-violet-50 dark:bg-violet-950/20 border-violet-200/50 dark:border-violet-800/30">
         <p className="text-[10px] sm:text-xs font-semibold mb-2 sm:mb-3 uppercase tracking-wider text-violet-600 dark:text-violet-400">
           Choose your answer
@@ -196,7 +192,6 @@ export function GamePlay({
         <p className="text-base">{q?.question}</p>
       </div>
 
-      {/* Options */}
       <div className="space-y-2.5">
         {q?.options.map((opt, i) => (
           <button

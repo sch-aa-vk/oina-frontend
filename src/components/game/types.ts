@@ -1,5 +1,3 @@
-// ─── Shared game builder types ────────────────────────────────────────────────
-
 export interface Recipient {
   name: string;
   occasion: string;
@@ -45,8 +43,6 @@ export const OCCASIONS: string[] = [
   "Graduation 🎓",
   "Other",
 ];
-
-// Pre-built themes for each game ──────────────────────────────────────────────
 
 export const CHOOSE_ME_THEME: GameTheme = {
   bannerGradient:
