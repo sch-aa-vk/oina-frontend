@@ -1,4 +1,4 @@
-import { Plus, Trash2, Sparkles } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { OptionCard } from "./OptionCard";
@@ -68,14 +68,6 @@ export function QuestionBlock({
           />
         </div>
         <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 sm:h-8 gap-1 sm:gap-1.5 text-[10px] sm:text-xs text-muted-foreground hover:text-primary px-1.5 sm:px-2"
-          >
-            <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-            <span className="hidden sm:inline">AI help</span>
-          </Button>
           {totalQuestions > 1 && (
             <Button
               variant="ghost"

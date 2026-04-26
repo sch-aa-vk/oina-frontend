@@ -413,7 +413,6 @@ export default function ChooseMe() {
             personalMessage={personalMessage}
             onPersonalMessageChange={setPersonalMessage}
             onContinue={() => setStep(2)}
-            theme={CHOOSE_ME_THEME}
             heading="Who is this game for? 🎁"
             namePlaceholder="e.g. Sarah, Mom, Best Friend…"
             messagePlaceholder="Write a sweet intro message that your recipient will see before playing…"

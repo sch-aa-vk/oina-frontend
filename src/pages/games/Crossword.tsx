@@ -515,7 +515,6 @@ export default function Crossword() {
             personalMessage={personalMessage}
             onPersonalMessageChange={setPersonalMessage}
             onContinue={() => setStep(2)}
-            theme={CROSSWORD_THEME}
             heading="Who's solving? 📝"
             namePlaceholder="e.g. Jamie, Grandma, My Love…"
             messagePlaceholder="A warm message your recipient sees before they start solving…"

@@ -1,11 +1,11 @@
-import { User, Gift, MessageCircleHeart, Sparkles } from "lucide-react";
+import { User, Gift, MessageCircleHeart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { OCCASIONS } from "./types";
-import type { Recipient, GameTheme } from "./types";
+import type { Recipient } from "./types";
 
 interface RecipientStepProps {
   recipient: Recipient;
@@ -13,13 +13,10 @@ interface RecipientStepProps {
   personalMessage: string;
   onPersonalMessageChange: (message: string) => void;
   onContinue: () => void;
-  theme: GameTheme;
   namePlaceholder?: string;
   messagePlaceholder?: string;
   heading?: string;
   subheading?: string;
-  aiTeaserTitle?: string;
-  aiTeaserBody?: string;
   continueLabel?: string;
 }
 
@@ -29,13 +26,10 @@ export function RecipientStep({
   personalMessage,
   onPersonalMessageChange,
   onContinue,
-  theme,
   namePlaceholder = "e.g. Sarah, Mom, Best Friend…",
   messagePlaceholder = "Write a sweet intro message that your recipient will see before playing…",
   heading = "Who is this game for? 🎁",
   subheading = "Tell us about your recipient — we'll use this to personalize the experience.",
-  aiTeaserTitle,
-  aiTeaserBody,
   continueLabel = "Continue →",
 }: RecipientStepProps) {
   return (
@@ -110,45 +104,6 @@ export function RecipientStep({
           </p>
         </div>
       </div>
-
-      {(aiTeaserTitle || aiTeaserBody) && (
-        <div
-          className={cn(
-            "rounded-2xl sm:rounded-3xl border p-4 sm:p-6 bg-linear-to-br",
-            theme.teaserBorder,
-            theme.teaserBg,
-          )}
-        >
-          <div className="flex items-start gap-3 sm:gap-4">
-            <div
-              className={cn(
-                "w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-linear-to-br flex items-center justify-center shrink-0 mt-0.5",
-                theme.teaserIcon,
-              )}
-            >
-              <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-            </div>
-            <div className="min-w-0">
-              <p
-                className={cn(
-                  "font-semibold text-xs sm:text-sm mb-0.5 sm:mb-1 leading-snug",
-                  theme.teaserTitle,
-                )}
-              >
-                {aiTeaserTitle}
-              </p>
-              <p
-                className={cn(
-                  "text-xs sm:text-sm leading-snug",
-                  theme.teaserBody,
-                )}
-              >
-                {aiTeaserBody}
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
 
       <div className="flex justify-end">
         <Button

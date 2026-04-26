@@ -261,7 +261,7 @@ export default function GuessByEmoji() {
         theme={GUESS_BY_EMOJI_THEME}
       />
 
-      <div className="max-w-3xl mx-auto px-3 sm:px-6 py-5 sm:py-8 space-y-4 sm:space-y-6">
+      <div className="mx-auto px-3 sm:px-6 py-5 sm:py-8 space-y-4 sm:space-y-6">
         {step === 1 && (
           <RecipientStep
             recipient={recipient}
@@ -269,12 +269,9 @@ export default function GuessByEmoji() {
             personalMessage={personalMessage}
             onPersonalMessageChange={setPersonalMessage}
             onContinue={() => setStep(2)}
-            theme={GUESS_BY_EMOJI_THEME}
             heading="Who's playing? 😄"
             namePlaceholder="e.g. Alex, Dad, My Person…"
             messagePlaceholder="Write a fun intro your recipient sees before they start guessing…"
-            aiTeaserTitle="AI-powered emoji suggestions — coming next step"
-            aiTeaserBody="Describe a memory, movie, or inside joke and our AI will pick the perfect emoji combo to represent it."
             continueLabel="Continue to puzzles →"
           />
         )}
@@ -308,26 +305,9 @@ export default function GuessByEmoji() {
                 isLoading={isAiLoading}
                 disabled={!recipient.name.trim() || !recipient.occasion.trim()}
                 error={aiError}
+                showCloseButton={false}
               />
             )}
-
-            <div className="grid grid-cols-3 gap-2 sm:gap-3">
-              {[
-                { icon: "😄🎂🎉", label: "Add emojis" },
-                { icon: "💡", label: "Set the answer" },
-                { icon: "🎯", label: "Pick difficulty" },
-              ].map((item) => (
-                <div
-                  key={item.label}
-                  className="rounded-xl sm:rounded-2xl bg-background border border-border p-2 sm:p-3 text-center space-y-0.5 sm:space-y-1.5"
-                >
-                  <p className="text-lg sm:text-2xl">{item.icon}</p>
-                  <p className="text-[10px] sm:text-xs text-muted-foreground font-medium leading-snug">
-                    {item.label}
-                  </p>
-                </div>
-              ))}
-            </div>
 
             <div className="space-y-3 sm:space-y-4">
               {puzzles.map((puzzle, i) => (
