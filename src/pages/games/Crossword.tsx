@@ -167,6 +167,32 @@ export default function Crossword() {
     [coverPreviewUrl],
   );
 
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("cw:draft");
+      if (!raw) return;
+      const d = JSON.parse(raw);
+      if (d.recipient) setRecipient(d.recipient);
+      if (typeof d.personalMessage === "string") setPersonalMessage(d.personalMessage);
+      if (Array.isArray(d.words)) setWords(d.words);
+      if (d.grid) setGrid(d.grid);
+      if (typeof d.gameTitle === "string") setGameTitle(d.gameTitle);
+      if (typeof d.showSolution === "boolean") setShowSolution(d.showSolution);
+      if (typeof d.clueLanguage === "string") setClueLanguage(d.clueLanguage);
+      if (typeof d.draftGameId === "string") setDraftGameId(d.draftGameId);
+      if (d.visibility === "private-link" || d.visibility === "public") setVisibility(d.visibility);
+    } catch { /* corrupted — ignore */ }
+  }, []);
+
+  const handlePreview = (): void => {
+    localStorage.setItem("cw:draft", JSON.stringify({
+      recipient, personalMessage, words, grid, gameTitle, showSolution, clueLanguage, draftGameId, visibility,
+    }));
+    navigate("/create/crossword/preview", {
+      state: { grid, recipient, personalMessage },
+    });
+  };
+
   const wordScript = useMemo<"latin" | "cyrillic" | null>(() => {
     for (const w of words) {
       const word = w.word.trim();
@@ -470,11 +496,7 @@ export default function Crossword() {
         onStepChange={setStep}
         stepLabels={STEP_LABELS}
         previewDisabled={!grid}
-        onPreview={() =>
-          navigate("/create/crossword/preview", {
-            state: { grid, recipient, personalMessage },
-          })
-        }
+        onPreview={handlePreview}
         canPublish={canPublish}
         onPublish={handlePublish}
         isPublishing={isPublishing}

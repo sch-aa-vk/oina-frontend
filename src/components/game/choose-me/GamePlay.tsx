@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { Question, GameOutcome } from "./types";
@@ -35,11 +35,28 @@ export function GamePlay({
   const [isComplete, setIsComplete] = useState<boolean>(false);
   const [winner, setWinner] = useState<GameOutcome | null>(null);
 
+  const [round, setRound] = useState(0);
+
   const answersRef = useRef<{ outcomeId: string }[]>([]);
 
-  const [shuffledQuestions] = useState<Question[]>(() =>
-    shuffle ? shuffleArray(questions) : questions
-  );
+  const shuffledQuestions = useMemo(() => {
+    if (!shuffle) return questions;
+    return shuffleArray(questions).map((q) => ({
+      ...q,
+      options: shuffleArray(q.options),
+    }));
+  // round is intentionally included so Play Again re-shuffles
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shuffle, questions, round]);
+
+  const handlePlayAgain = (): void => {
+    answersRef.current = [];
+    setCurrentQ(0);
+    setSelected(null);
+    setWinner(null);
+    setIsComplete(false);
+    if (shuffle) setRound((r) => r + 1);
+  };
 
   const q = shuffledQuestions[currentQ];
 
@@ -99,7 +116,7 @@ export function GamePlay({
           )}
 
           <Button
-            onClick={() => window.location.reload()}
+            onClick={handlePlayAgain}
             className="w-full"
             size="lg"
           >
@@ -112,7 +129,7 @@ export function GamePlay({
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-violet-50 to-pink-50 dark:from-violet-950 dark:to-pink-950 flex items-center justify-center p-4">
-      <div className="bg-background rounded-3xl border border-border shadow-2xl w-full max-w-sm max-h-[90vh] overflow-y-auto">
+      <div className="bg-background rounded-3xl border border-border shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm px-6 py-4 border-b border-border space-y-3">
           <div>
             <p className="text-xs text-muted-foreground uppercase tracking-wider">

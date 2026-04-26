@@ -22,7 +22,6 @@ import {
 import type { Recipient } from "@/components/game";
 import {
   QuestionBlock,
-  PreviewModal,
   STEP_LABELS,
   createDefaultQuestion,
   createDefaultOutcome,
@@ -30,15 +29,18 @@ import {
 import type { GameOption, QuestionField, GameOutcome } from "@/components/game/choose-me";
 
 const DEFAULT_OPTION_EMOJIS = ['❤️', '🌟', '🔥', '💫'];
-
 export default function ChooseMe() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const editGameId = searchParams.get("gameId");
   const isEditMode = editGameId !== null;
 
-  const [step, setStep] = useState<number>(1);
-  const [showPreview, setShowPreview] = useState<boolean>(false);
+  const step = Number(searchParams.get("step") ?? "1");
+  const setStep = (s: number): void =>
+    setSearchParams(
+      (prev) => { prev.set("step", String(s)); return prev; },
+      { replace: true }
+    );
   const [recipient, setRecipient] = useState<Recipient>({
     name: "",
     occasion: "",
@@ -118,7 +120,32 @@ export default function ChooseMe() {
     if (coverPreviewUrl) URL.revokeObjectURL(coverPreviewUrl);
   }, [coverPreviewUrl]);
 
-  // ── Outcomes handlers ──────────────────────────────────────────────────────
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("cm:draft");
+      if (!raw) return;
+      const d = JSON.parse(raw);
+      if (d.recipient) setRecipient(d.recipient);
+      if (typeof d.personalMessage === "string") setPersonalMessage(d.personalMessage);
+      if (typeof d.topic === "string") setTopic(d.topic);
+      if (Array.isArray(d.outcomes)) setOutcomes(d.outcomes);
+      if (Array.isArray(d.questions)) setQuestions(d.questions);
+      if (typeof d.shuffle === "boolean") setShuffle(d.shuffle);
+      if (typeof d.gameTitle === "string") setGameTitle(d.gameTitle);
+      if (typeof d.draftGameId === "string") setDraftGameId(d.draftGameId);
+      if (d.visibility === "private-link" || d.visibility === "public") setVisibility(d.visibility);
+    } catch { /* corrupted — ignore */ }
+  }, []);
+
+  const handlePreview = (): void => {
+    localStorage.setItem("cm:draft", JSON.stringify({
+      recipient, personalMessage, topic, outcomes, questions, shuffle, gameTitle, draftGameId, visibility,
+    }));
+    navigate("/create/choose-me/preview", {
+      state: { questions, outcomes, recipient, personalMessage, shuffle },
+    });
+  };
+
   const addOutcome = (): void => {
     setOutcomes((prev) => [...prev, createDefaultOutcome(prev.length)]);
   };
@@ -128,7 +155,6 @@ export default function ChooseMe() {
   const removeOutcome = (i: number): void => {
     const removed = outcomes[i];
     setOutcomes((prev) => prev.filter((_, idx) => idx !== i));
-    // Clear outcomeId refs from questions if this outcome was assigned
     setQuestions((prev) =>
       prev.map((q) => ({
         ...q,
@@ -139,7 +165,6 @@ export default function ChooseMe() {
     );
   };
 
-  // ── Questions handlers ─────────────────────────────────────────────────────
   const updateQuestion = (
     qIndex: number,
     field: QuestionField,
@@ -364,20 +389,11 @@ export default function ChooseMe() {
 
   return (
     <div className="min-h-screen bg-muted/30">
-      {showPreview && (
-        <PreviewModal
-          questions={questions}
-          recipient={recipient}
-          personalMessage={personalMessage}
-          onClose={() => setShowPreview(false)}
-        />
-      )}
-
       <GameTopBar
         step={step}
         onStepChange={setStep}
         stepLabels={STEP_LABELS}
-        onPreview={() => setShowPreview(true)}
+        onPreview={handlePreview}
         canPublish={canPublish}
         onPublish={handlePublish}
         isPublishing={isPublishing}

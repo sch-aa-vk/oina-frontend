@@ -16,6 +16,7 @@ const VerifyEmail = lazy(() => import("@/pages/auth/VerifyEmail"));
 const ForgotPassword = lazy(() => import("@/pages/auth/ForgotPassword"));
 const ResetPassword = lazy(() => import("@/pages/auth/ResetPassword"));
 const ChooseMe = lazy(() => import("@/pages/games/ChooseMe"));
+const ChooseMePreview = lazy(() => import("@/pages/games/ChooseMePreview"));
 const GuessByEmoji = lazy(() => import("@/pages/games/GuessByEmoji"));
 const Crossword = lazy(() => import("@/pages/games/Crossword"));
 const CrosswordPreview = lazy(() => import("@/pages/games/CrosswordPreview"));
@@ -35,6 +36,7 @@ export default function App() {
               <Route element={<MainLayout />}>
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/create/choose-me" element={<ChooseMe />} />
+                <Route path="/create/choose-me/preview" element={<ChooseMePreview />} />
                 <Route
                   path="/create/guess-by-emoji"
                   element={<GuessByEmoji />}
