@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
-import { RefreshCw } from "lucide-react";
+import { Heart, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ClueList } from "./ClueList";
@@ -13,6 +13,11 @@ interface GamePlayProps {
   personalMessage: string;
   showSolution: boolean;
   onComplete?: (score: number, total: number) => void;
+  isLiked?: boolean;
+  likeCount?: number;
+  onToggleLike?: () => void;
+  isLiking?: boolean;
+  isAuthenticated?: boolean;
 }
 
 export function GamePlay({
@@ -20,12 +25,17 @@ export function GamePlay({
   recipient,
   personalMessage,
   onComplete,
+  isLiked,
+  likeCount,
+  onToggleLike,
+  isLiking,
+  isAuthenticated,
 }: GamePlayProps) {
   const [userInputs, setUserInputs] = useState<Record<string, string>>({});
   const [selectedCell, setSelectedCell] = useState<{ r: number; c: number } | null>(null);
   const [selectedDir, setSelectedDir] = useState<Direction>("across");
-  const [isComplete, setIsComplete] = useState(false);
   const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const hasCalledOnComplete = useRef(false);
   const key = (r: number, c: number) => `${r}-${c}`;
 
   const correctWordCount = useMemo(() => {
@@ -40,12 +50,14 @@ export function GamePlay({
     }).length;
   }, [grid.placedWords, userInputs]);
 
+  const isComplete = grid.placedWords.length > 0 && correctWordCount === grid.placedWords.length;
+
   useEffect(() => {
-    if (!isComplete && grid.placedWords.length > 0 && correctWordCount === grid.placedWords.length) {
-      setIsComplete(true);
+    if (isComplete && !hasCalledOnComplete.current) {
+      hasCalledOnComplete.current = true;
       onComplete?.(correctWordCount, grid.placedWords.length);
     }
-  }, [correctWordCount, grid.placedWords.length, isComplete, onComplete]);
+  }, [isComplete, correctWordCount, grid.placedWords.length, onComplete]);
 
   const focusCell = useCallback((r: number, c: number): void => {
     const input = inputRefs.current[key(r, c)];
@@ -202,6 +214,26 @@ export function GamePlay({
                 {personalMessage}
               </p>
             </div>
+          )}
+
+          {onToggleLike && (
+            <button
+              onClick={onToggleLike}
+              disabled={isLiking || !isAuthenticated}
+              title={!isAuthenticated ? "Sign in to like" : undefined}
+              className={cn(
+                "flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border transition-colors text-sm font-medium",
+                isLiked
+                  ? "bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-800 text-rose-500"
+                  : "border-border text-muted-foreground hover:text-rose-500 hover:border-rose-300 disabled:opacity-50",
+              )}
+            >
+              <Heart className={cn("size-4", isLiked && "fill-current")} />
+              {isLiked ? "Liked!" : "Like this game"}
+              {likeCount !== undefined && (
+                <span className="text-xs opacity-60">({likeCount})</span>
+              )}
+            </button>
           )}
 
           <Button onClick={() => window.location.reload()} className="w-full" size="lg">

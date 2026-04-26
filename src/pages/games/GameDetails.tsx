@@ -91,6 +91,7 @@ export default function GameDetails() {
           setGame(cached);
           setState("ready");
           setLocalLikeCount(cached.likeCount);
+          setIsLiked(cached.isLikedByCurrentUser ?? false);
           return;
         }
 
@@ -121,6 +122,7 @@ export default function GameDetails() {
         setGame(baseGame);
         setState("ready");
         setLocalLikeCount(baseGame.likeCount);
+        setIsLiked(baseGame.isLikedByCurrentUser ?? false);
 
         if (baseGame.visibility !== "draft") {
           appCache.set(`game-${gameId}`, baseGame);
@@ -157,7 +159,7 @@ export default function GameDetails() {
     };
   }, [gameId, hasGameId]);
 
-  const handleToggleLike = async () => {
+  const handleToggleLike = useCallback(async () => {
     if (!isAuthenticated || isLiking || game?.visibility === "draft") return;
 
     setIsLiking(true);
@@ -189,7 +191,7 @@ export default function GameDetails() {
     } finally {
       setIsLiking(false);
     }
-  };
+  }, [isAuthenticated, isLiking, isLiked, gameId, game?.visibility]);
 
   const gamePlayContent = useMemo(() => {
     if (!game) return null;
@@ -227,6 +229,11 @@ export default function GameDetails() {
           personalMessage={personalMessage}
           shuffle={settings.shuffle || false}
           onComplete={handleChooseMeComplete}
+          isLiked={isLiked}
+          likeCount={localLikeCount}
+          onToggleLike={handleToggleLike}
+          isLiking={isLiking}
+          isAuthenticated={isAuthenticated}
         />
       );
     }
@@ -241,6 +248,11 @@ export default function GameDetails() {
           personalMessage={personalMessage}
           showAnswers={settings.showAnswers || false}
           onComplete={handleGameComplete}
+          isLiked={isLiked}
+          likeCount={localLikeCount}
+          onToggleLike={handleToggleLike}
+          isLiking={isLiking}
+          isAuthenticated={isAuthenticated}
         />
       );
     }
@@ -270,12 +282,17 @@ export default function GameDetails() {
           personalMessage={personalMessage}
           showSolution={settings.showSolution || false}
           onComplete={handleGameComplete}
+          isLiked={isLiked}
+          likeCount={localLikeCount}
+          onToggleLike={handleToggleLike}
+          isLiking={isLiking}
+          isAuthenticated={isAuthenticated}
         />
       );
     }
 
     return null;
-  }, [game, handleGameComplete]);
+  }, [game, handleGameComplete, handleChooseMeComplete, isLiked, localLikeCount, handleToggleLike, isLiking, isAuthenticated]);
 
   if (gamePlayContent && game?.visibility !== "draft") {
     return (

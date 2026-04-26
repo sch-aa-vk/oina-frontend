@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Eye, Sparkles, TrendingUp, Heart, Search } from "lucide-react";
+import { Sparkles, TrendingUp, Heart, Search, Play } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -87,8 +87,8 @@ function PublicGameCard({
             }}
             className="flex items-center gap-2 bg-white text-gray-900 font-semibold text-sm px-4 py-2.5 rounded-full shadow-lg hover:scale-105 transition-transform"
           >
-            <Eye className="w-4 h-4" />
-            Preview
+            <Play className="w-4 h-4" />
+            Play
           </button>
         </div>
       </div>
@@ -227,6 +227,15 @@ export default function Home() {
         const next = { ...prev };
         res.games.forEach((g) => {
           if (!(g.gameId in next)) next[g.gameId] = g.likeCount;
+        });
+        return next;
+      });
+      setLikedGames((prev) => {
+        const next = { ...prev };
+        res.games.forEach((g) => {
+          if (!(g.gameId in next) && g.isLikedByCurrentUser !== undefined) {
+            next[g.gameId] = g.isLikedByCurrentUser;
+          }
         });
         return next;
       });
