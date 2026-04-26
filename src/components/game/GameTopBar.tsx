@@ -1,5 +1,4 @@
-import { ChevronLeft, Eye, Gift } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Eye, Gift, Save, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { StepBadge } from "./StepBadge";
@@ -14,6 +13,10 @@ interface GameTopBarProps {
   canPublish: boolean;
   onPublish?: () => void;
   isPublishing?: boolean;
+  onSave?: () => void;
+  isSaving?: boolean;
+  saveSuccess?: boolean;
+  isPublished?: boolean;
   theme: GameTheme;
 }
 
@@ -26,24 +29,16 @@ export function GameTopBar({
   canPublish,
   onPublish,
   isPublishing = false,
+  onSave,
+  isSaving = false,
+  saveSuccess = false,
+  isPublished = false,
   theme,
 }: GameTopBarProps) {
-  const navigate = useNavigate();
-
   return (
     <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border">
-      <div className="max-w-3xl mx-auto px-3 sm:px-6 h-12 sm:h-16 flex items-center justify-between gap-2 sm:gap-4">
+      <div className="mx-auto px-3 sm:px-6 h-12 sm:h-16 flex items-center justify-between gap-2 sm:gap-4">
         <div className="flex items-center gap-2 sm:gap-4 min-w-0">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-2 text-muted-foreground -ml-1 sm:-ml-2 shrink-0 h-8 sm:h-9 w-8 sm:w-auto px-0 sm:px-3"
-            onClick={() => navigate("/")}
-          >
-            <ChevronLeft className="w-4 h-4" />
-            <span className="hidden sm:block">Games</span>
-          </Button>
-
           <div className="flex items-center gap-1.5 sm:gap-3">
             {([1, 2, 3] as const).map((s, i) => (
               <div key={s} className="flex items-center gap-1.5 sm:gap-3">
@@ -59,6 +54,28 @@ export function GameTopBar({
         </div>
 
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          {onSave && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 h-8 sm:h-9 w-8 sm:w-auto px-0 sm:px-3"
+              disabled={isSaving}
+              onClick={onSave}
+            >
+              {saveSuccess ? (
+                <Check className="w-4 h-4 text-emerald-500" />
+              ) : (
+                <Save className="w-4 h-4" />
+              )}
+              <span className="hidden sm:inline">
+                {isSaving
+                  ? isPublished ? "Updating…" : "Saving…"
+                  : saveSuccess
+                  ? isPublished ? "Updated" : "Saved"
+                  : isPublished ? "Update" : "Save"}
+              </span>
+            </Button>
+          )}
           <Button
             variant="outline"
             size="sm"
@@ -70,16 +87,7 @@ export function GameTopBar({
             <span className="hidden sm:inline">Preview</span>
           </Button>
 
-          {step < 3 ? (
-            <Button
-              size="sm"
-              className="h-8 sm:h-9 text-xs sm:text-sm px-3 sm:px-4"
-              onClick={() => onStepChange(step + 1)}
-            >
-              <span className="sm:hidden">Next</span>
-              <span className="hidden sm:inline">Continue</span>
-            </Button>
-          ) : (
+          {isPublished ? null : (
             <Button
               size="sm"
               disabled={!canPublish || isPublishing}

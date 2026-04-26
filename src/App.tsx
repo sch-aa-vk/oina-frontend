@@ -18,6 +18,7 @@ const ResetPassword = lazy(() => import("@/pages/auth/ResetPassword"));
 const ChooseMe = lazy(() => import("@/pages/games/ChooseMe"));
 const GuessByEmoji = lazy(() => import("@/pages/games/GuessByEmoji"));
 const Crossword = lazy(() => import("@/pages/games/Crossword"));
+const CrosswordPreview = lazy(() => import("@/pages/games/CrosswordPreview"));
 const GameDetails = lazy(() => import("@/pages/games/GameDetails"));
 
 export default function App() {
@@ -39,6 +40,7 @@ export default function App() {
                   element={<GuessByEmoji />}
                 />
                 <Route path="/create/crossword" element={<Crossword />} />
+                <Route path="/create/crossword/preview" element={<CrosswordPreview />} />
                 <Route path="/games/:gameId" element={<GameDetails />} />
                 <Route path="/gift-generator" element={<GiftGenerator />} />
               </Route>

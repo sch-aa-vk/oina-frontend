@@ -11,6 +11,7 @@ import type {
   PublishGameRequest,
   RecordGameResultPayload,
   SortBy,
+  UpdateGameRequest,
 } from "@/types/games";
 
 type ApiErrorPayload = {
@@ -128,6 +129,11 @@ export const gamesService = {
 
   async deleteGame(gameId: string): Promise<void> {
     await api.delete(`/games/${gameId}`);
+  },
+
+  async updateGame(gameId: string, payload: UpdateGameRequest): Promise<GameResponse> {
+    const response = await api.put<GameResponse>(`/games/${gameId}`, payload);
+    return response.data;
   },
 
   async restoreGame(gameId: string): Promise<GameResponse> {

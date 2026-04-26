@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { appCache, CACHE_TTL } from "@/lib/cache";
+import { cn } from "@/lib/utils";
 import {
   Camera,
   Pencil,
@@ -13,7 +14,6 @@ import {
   Loader2,
   LogOut,
   Settings,
-  Trash2,
   Undo2,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -78,10 +78,6 @@ export default function Profile() {
   const [isLoadingGames, setIsLoadingGames] = useState<boolean>(!cachedGames);
   const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
 
-  const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(
-    null,
-  );
-  const [deletingGameId, setDeletingGameId] = useState<string | null>(null);
   const [restoringGameId, setRestoringGameId] = useState<string | null>(null);
   const [gameActionError, setGameActionError] = useState<string>("");
 
@@ -158,26 +154,6 @@ export default function Profile() {
     } finally {
       setIsUploadingAvatar(false);
       e.target.value = "";
-    }
-  };
-
-  const handleDeleteGame = async (gameId: string) => {
-    setDeletingGameId(gameId);
-    setGameActionError("");
-    try {
-      await gamesService.deleteGame(gameId);
-      const updated = games.map((g) =>
-        g.gameId === gameId
-          ? { ...g, isDeleted: true, deletedAt: new Date().toISOString() }
-          : g,
-      );
-      setGames(updated);
-      appCache.set("my-games", updated);
-      setConfirmingDeleteId(null);
-    } catch (err) {
-      setGameActionError(gamesService.mapError(err).message);
-    } finally {
-      setDeletingGameId(null);
     }
   };
 
@@ -282,6 +258,15 @@ export default function Profile() {
     "guess-by-emoji": "😄",
     crossword: "📝",
   };
+
+  const gradientByType: Record<GameResponse["type"], string> = {
+    "choose-me": "from-violet-500 to-indigo-500",
+    "guess-by-emoji": "from-amber-500 to-rose-500",
+    crossword: "from-emerald-500 to-teal-500",
+  };
+
+  const getEditPath = (game: GameResponse): string =>
+    `/create/${game.type}?gameId=${encodeURIComponent(game.gameId)}`;
 
   return (
     <div className="flex flex-col gap-6 w-full">
@@ -447,22 +432,39 @@ export default function Profile() {
               {games.map((game) => (
                 <div key={game.gameId} className="relative">
                   <Link
-                    to={`/games/${game.gameId}`}
-                    className="group rounded-xl border bg-card overflow-hidden hover:shadow-md transition-shadow block"
+                    to={getEditPath(game)}
+                    className={cn(
+                      "group rounded-xl border bg-card overflow-hidden hover:shadow-md transition-all duration-300 block",
+                      "ring-1 ring-black/5 dark:ring-white/5",
+                      "hover:ring-2 hover:ring-primary/30 hover:-translate-y-0.5",
+                    )}
                   >
                     <div className="h-36 relative overflow-hidden">
                       {game.thumbnail ? (
                         <img
                           src={game.thumbnail}
                           alt={game.title}
-                          className={`w-full h-full object-cover${game.isDeleted ? " opacity-60" : ""}`}
+                          className={`absolute inset-0 w-full h-full object-cover${game.isDeleted ? " opacity-60" : ""}`}
                         />
                       ) : (
-                        <div
-                          className={`w-full h-full bg-linear-to-br from-primary/20 to-primary/5 p-4${game.isDeleted ? " opacity-60" : ""}`}
-                        >
-                          <p className="text-4xl">{gameEmoji[game.type]}</p>
-                        </div>
+                        <>
+                          <div
+                            className={cn(
+                              "absolute inset-0 bg-linear-to-br opacity-60",
+                              gradientByType[game.type],
+                              game.isDeleted && "opacity-40",
+                            )}
+                          />
+                          <div className="absolute inset-0 bg-muted/40 dark:bg-muted/60" />
+                          <div
+                            className={cn(
+                              "absolute inset-0 flex items-center justify-center text-4xl select-none",
+                              game.isDeleted ? "opacity-40" : "opacity-60",
+                            )}
+                          >
+                            {gameEmoji[game.type]}
+                          </div>
+                        </>
                       )}
                       <div className="absolute top-3 right-3 flex items-center gap-1.5">
                         {game.isDeleted && (
@@ -521,47 +523,10 @@ export default function Profile() {
                               ? "Restoring..."
                               : "Restore"}
                           </button>
-                        ) : confirmingDeleteId === game.gameId ? (
-                          <div className="flex items-center gap-2">
-                            <span className="text-[10px] text-destructive font-medium">
-                              Delete this game?
-                            </span>
-                            <button
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                handleDeleteGame(game.gameId);
-                              }}
-                              disabled={deletingGameId === game.gameId}
-                              className="text-[10px] font-semibold text-destructive hover:underline disabled:opacity-50"
-                            >
-                              {deletingGameId === game.gameId
-                                ? "Deleting..."
-                                : "Yes, delete"}
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                setConfirmingDeleteId(null);
-                              }}
-                              className="text-[10px] text-muted-foreground hover:text-foreground"
-                            >
-                              Cancel
-                            </button>
-                          </div>
                         ) : (
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              setConfirmingDeleteId(game.gameId);
-                            }}
-                            className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-destructive transition-colors ml-auto"
-                          >
-                            <Trash2 className="size-3" />
-                            Delete
-                          </button>
+                          <span className="text-[10px] text-muted-foreground ml-auto">
+                            Click card to edit
+                          </span>
                         )}
                       </div>
                     </div>

@@ -34,8 +34,8 @@ export function RecipientStep({
   messagePlaceholder = "Write a sweet intro message that your recipient will see before playing…",
   heading = "Who is this game for? 🎁",
   subheading = "Tell us about your recipient — we'll use this to personalize the experience.",
-  aiTeaserTitle = "AI-powered personalization — coming next step",
-  aiTeaserBody = "Once you fill in the recipient details, our AI will suggest tailored content that feels genuinely personal.",
+  aiTeaserTitle,
+  aiTeaserBody,
   continueLabel = "Continue →",
 }: RecipientStepProps) {
   return (
@@ -111,42 +111,44 @@ export function RecipientStep({
         </div>
       </div>
 
-      <div
-        className={cn(
-          "rounded-2xl sm:rounded-3xl border p-4 sm:p-6 bg-linear-to-br",
-          theme.teaserBorder,
-          theme.teaserBg,
-        )}
-      >
-        <div className="flex items-start gap-3 sm:gap-4">
-          <div
-            className={cn(
-              "w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-linear-to-br flex items-center justify-center shrink-0 mt-0.5",
-              theme.teaserIcon,
-            )}
-          >
-            <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-          </div>
-          <div className="min-w-0">
-            <p
+      {(aiTeaserTitle || aiTeaserBody) && (
+        <div
+          className={cn(
+            "rounded-2xl sm:rounded-3xl border p-4 sm:p-6 bg-linear-to-br",
+            theme.teaserBorder,
+            theme.teaserBg,
+          )}
+        >
+          <div className="flex items-start gap-3 sm:gap-4">
+            <div
               className={cn(
-                "font-semibold text-xs sm:text-sm mb-0.5 sm:mb-1 leading-snug",
-                theme.teaserTitle,
+                "w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-linear-to-br flex items-center justify-center shrink-0 mt-0.5",
+                theme.teaserIcon,
               )}
             >
-              {aiTeaserTitle}
-            </p>
-            <p
-              className={cn(
-                "text-xs sm:text-sm leading-snug",
-                theme.teaserBody,
-              )}
-            >
-              {aiTeaserBody}
-            </p>
+              <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+            </div>
+            <div className="min-w-0">
+              <p
+                className={cn(
+                  "font-semibold text-xs sm:text-sm mb-0.5 sm:mb-1 leading-snug",
+                  theme.teaserTitle,
+                )}
+              >
+                {aiTeaserTitle}
+              </p>
+              <p
+                className={cn(
+                  "text-xs sm:text-sm leading-snug",
+                  theme.teaserBody,
+                )}
+              >
+                {aiTeaserBody}
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       <div className="flex justify-end">
         <Button

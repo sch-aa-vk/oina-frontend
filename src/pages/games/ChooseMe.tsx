@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Shuffle, ImageIcon, X } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { mapChooseMeContent, buildCreateGamePayload, buildPublishPayload, validateCreatePayload } from "@/lib/gameMappers";
@@ -30,6 +30,10 @@ const DEFAULT_OPTION_EMOJIS = ['❤️', '🌟', '🔥', '💫'];
 
 export default function ChooseMe() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const editGameId = searchParams.get("gameId");
+  const isEditMode = editGameId !== null;
+
   const [step, setStep] = useState<number>(1);
   const [showPreview, setShowPreview] = useState<boolean>(false);
   const [recipient, setRecipient] = useState<Recipient>({
@@ -42,12 +46,44 @@ export default function ChooseMe() {
   const [shuffle, setShuffle] = useState<boolean>(false);
   const [visibility, setVisibility] = useState<Extract<GameVisibility, "private-link" | "public">>("private-link");
   const [isPublishing, setIsPublishing] = useState<boolean>(false);
-  const [submitError, setSubmitError] = useState<string>("");
   const [draftGameId, setDraftGameId] = useState<string | null>(null);
   const [isAiLoading, setIsAiLoading] = useState<boolean>(false);
   const [aiError, setAiError] = useState<string | null>(null);
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [coverPreviewUrl, setCoverPreviewUrl] = useState<string | null>(null);
+  const [isLoadingGame, setIsLoadingGame] = useState<boolean>(isEditMode);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [wasPublished, setWasPublished] = useState<boolean>(false);
+  const [existingThumbnail, setExistingThumbnail] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!editGameId) return;
+    let cancelled = false;
+    setIsLoadingGame(true);
+    gamesService.getGame(editGameId)
+      .then((game) => {
+        if (cancelled) return;
+        const c = game.content;
+        if (c.recipient) setRecipient(c.recipient as Recipient);
+        if (typeof c.personalMessage === "string") setPersonalMessage(c.personalMessage);
+        if (Array.isArray(c.questions)) setQuestions(c.questions as ReturnType<typeof createDefaultQuestion>[]);
+        const settings = c.settings as Record<string, unknown> | undefined;
+        if (typeof settings?.shuffle === "boolean") setShuffle(settings.shuffle);
+        setGameTitle(game.title);
+        if (game.visibility === "private-link" || game.visibility === "public") {
+          setVisibility(game.visibility);
+          setWasPublished(true);
+        }
+        if (game.thumbnail) setExistingThumbnail(game.thumbnail);
+      })
+      .catch(() => {
+        if (!cancelled) setLoadError("Failed to load game. Please try again.");
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoadingGame(false);
+      });
+    return () => { cancelled = true; };
+  }, [editGameId]);
 
   useEffect(() => () => {
     if (coverPreviewUrl) URL.revokeObjectURL(coverPreviewUrl);
@@ -103,43 +139,40 @@ export default function ChooseMe() {
     title: gameTitle.trim().length > 0,
   };
   const canPublish = Object.values(completeness).every(Boolean);
-  const missingFields = [
-    !completeness.recipient && "recipient name",
-    !completeness.questions && "question text",
-    !completeness.title && "game title",
-  ].filter(Boolean) as string[];
 
   const handlePublish = async (): Promise<void> => {
     if (isPublishing || !canPublish) {
       return;
     }
 
-    setSubmitError("");
     setIsPublishing(true);
-    let gameIdForPublish = draftGameId;
 
     try {
+      if (isEditMode && editGameId) {
+        const updateResult = await gamesService.updateGame(editGameId, {
+          title: gameTitle,
+          content: mapChooseMeContent({ recipient, personalMessage, questions, shuffle }),
+          coverImageContentType: coverFile ? coverFile.type : undefined,
+        });
+        if (coverFile && updateResult.coverUploadUrl) {
+          await gamesService.uploadGameCover(updateResult.coverUploadUrl, coverFile);
+        }
+        const published = await gamesService.publishGame(editGameId, buildPublishPayload(visibility));
+        navigate(`/games/${published.gameId}`);
+        return;
+      }
+
+      let gameIdForPublish = draftGameId;
+
       if (!gameIdForPublish) {
         const payload = buildCreateGamePayload(
           "choose-me",
-          {
-            title: gameTitle,
-            recipient,
-            personalMessage,
-          },
-          mapChooseMeContent({
-            recipient,
-            personalMessage,
-            questions,
-            shuffle,
-          })
+          { title: gameTitle, recipient, personalMessage },
+          mapChooseMeContent({ recipient, personalMessage, questions, shuffle })
         );
 
         const validationErrors = validateCreatePayload(payload);
-        if (validationErrors.length > 0) {
-          setSubmitError(validationErrors[0]);
-          return;
-        }
+        if (validationErrors.length > 0) return;
 
         const draft = await gamesService.createGame({
           ...payload,
@@ -151,6 +184,13 @@ export default function ChooseMe() {
         if (coverFile && draft.coverUploadUrl) {
           await gamesService.uploadGameCover(draft.coverUploadUrl, coverFile);
         }
+      } else if (coverFile) {
+        const updated = await gamesService.updateGame(gameIdForPublish, {
+          coverImageContentType: coverFile.type,
+        });
+        if (updated.coverUploadUrl) {
+          await gamesService.uploadGameCover(updated.coverUploadUrl, coverFile);
+        }
       }
 
       const published = await gamesService.publishGame(
@@ -158,19 +198,28 @@ export default function ChooseMe() {
         buildPublishPayload(visibility)
       );
       navigate(`/games/${published.gameId}`);
-    } catch (error) {
-      const apiError = gamesService.mapError(error);
-      if (gameIdForPublish) {
-        setSubmitError(
-          `Draft was created, but publish failed. ${apiError.message} You can retry publishing.`
-        );
-      } else {
-        setSubmitError(apiError.message);
-      }
+    } catch {
+      // silent — user can retry
     } finally {
       setIsPublishing(false);
     }
   };
+
+  if (isLoadingGame) {
+    return (
+      <div className="min-h-screen bg-muted/30 flex items-center justify-center">
+        <p className="text-muted-foreground text-sm">Loading game…</p>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="min-h-screen bg-muted/30 flex items-center justify-center">
+        <p className="text-destructive text-sm">{loadError}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -191,6 +240,7 @@ export default function ChooseMe() {
         canPublish={canPublish}
         onPublish={handlePublish}
         isPublishing={isPublishing}
+        isPublished={wasPublished}
         theme={CHOOSE_ME_THEME}
       />
 
@@ -312,15 +362,7 @@ export default function ChooseMe() {
               onGameTitleChange={setGameTitle}
               visibility={visibility}
               onVisibilityChange={setVisibility}
-              canPublish={canPublish}
               isPublishing={isPublishing}
-              submitError={submitError}
-              missingFields={missingFields}
-              onPublish={handlePublish}
-              onPreview={() => setShowPreview(true)}
-              onBack={() => setStep(2)}
-              backLabel="← Back to questions"
-              theme={CHOOSE_ME_THEME}
               titlePlaceholder={`e.g. "How well do you know me?" for ${
                 recipient.name || "them"
               }`}
@@ -337,6 +379,25 @@ export default function ChooseMe() {
                     >
                       <X className="size-3.5" />
                     </button>
+                  </div>
+                ) : existingThumbnail ? (
+                  <div className="relative rounded-xl overflow-hidden h-32">
+                    <img src={existingThumbnail} alt="Cover" className="w-full h-full object-cover" />
+                    <label className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 hover:opacity-100 transition-opacity cursor-pointer">
+                      <span className="text-white text-xs font-medium">Change cover</span>
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          setCoverFile(file);
+                          setCoverPreviewUrl(URL.createObjectURL(file));
+                          e.target.value = "";
+                        }}
+                      />
+                    </label>
                   </div>
                 ) : (
                   <label className="flex flex-col items-center justify-center h-24 rounded-xl border-2 border-dashed border-border cursor-pointer hover:border-primary/50 transition-colors">

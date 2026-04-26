@@ -13,13 +13,16 @@ import { ClueList } from "./ClueList";
 import { MIN_WORDS } from "./types";
 import type { CrosswordGrid } from "./types";
 
+import type { PlacedWord } from "./types";
+
 interface MobileGridPanelProps {
   grid: CrosswordGrid | null;
   isBuilding: boolean;
   validWordCount: number;
   placedWordCount: number;
-  skippedCount: number;
   onRebuild: () => void;
+  displayPlacedWords: PlacedWord[];
+  buildError?: string | null;
 }
 
 export function MobileGridPanel({
@@ -27,8 +30,9 @@ export function MobileGridPanel({
   isBuilding,
   validWordCount,
   placedWordCount,
-  skippedCount,
   onRebuild,
+  displayPlacedWords,
+  buildError = null,
 }: MobileGridPanelProps) {
   const [expanded, setExpanded] = useState<boolean>(false);
 
@@ -70,14 +74,6 @@ export function MobileGridPanel({
                   <Badge variant="secondary" className="text-[10px]">
                     {placedWordCount} placed
                   </Badge>
-                  {skippedCount > 0 && (
-                    <Badge
-                      variant="outline"
-                      className="text-[10px] text-amber-600 border-amber-300 bg-amber-50 dark:bg-amber-950/30"
-                    >
-                      {skippedCount} skipped
-                    </Badge>
-                  )}
                   {validWordCount >= MIN_WORDS && (
                     <Button
                       variant="ghost"
@@ -93,15 +89,24 @@ export function MobileGridPanel({
                     </Button>
                   )}
                 </div>
-                {skippedCount > 0 && (
-                  <p className="text-[10px] text-muted-foreground flex items-start gap-1">
-                    <AlertCircle className="w-3 h-3 shrink-0 mt-0.5 text-amber-500" />
-                    Some words couldn't intersect. Try shared letters.
-                  </p>
-                )}
               </div>
             )}
-            {!isBuilding && !grid && validWordCount < MIN_WORDS && (
+            {!isBuilding && !grid && buildError && (
+              <div className="flex flex-col items-center justify-center py-6 gap-2 text-center text-muted-foreground">
+                <AlertCircle className="w-6 h-6 opacity-50 text-amber-500" />
+                <p className="text-[10px]">{buildError}</p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 gap-1.5 text-[10px]"
+                  onClick={(e) => { e.stopPropagation(); onRebuild(); }}
+                >
+                  <RefreshCw className="w-2.5 h-2.5" />
+                  Rebuild
+                </Button>
+              </div>
+            )}
+            {!isBuilding && !grid && !buildError && validWordCount < MIN_WORDS && (
               <div className="flex flex-col items-center justify-center py-6 gap-1.5 text-center text-muted-foreground">
                 <Grid3X3 className="w-6 h-6 opacity-20" />
                 <p className="text-[10px]">
@@ -109,21 +114,28 @@ export function MobileGridPanel({
                 </p>
               </div>
             )}
-            {!isBuilding && !grid && validWordCount >= MIN_WORDS && (
-              <div className="flex flex-col items-center justify-center py-6 gap-1.5 text-center text-muted-foreground">
-                <AlertCircle className="w-5 h-5 opacity-40" />
-                <p className="text-[10px]">
-                  Couldn't arrange words. Try sharing more letters.
-                </p>
+            {!isBuilding && !grid && !buildError && validWordCount >= MIN_WORDS && (
+              <div className="flex flex-col items-center justify-center py-6 gap-2 text-center text-muted-foreground">
+                <Grid3X3 className="w-6 h-6 opacity-20" />
+                <p className="text-[10px]">Click Generate to build the crossword grid</p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 gap-1.5 text-[10px]"
+                  onClick={(e) => { e.stopPropagation(); onRebuild(); }}
+                >
+                  <RefreshCw className="w-2.5 h-2.5" />
+                  Generate
+                </Button>
               </div>
             )}
           </div>
           {grid && (
             <div className="pt-2.5 border-t border-border/50">
               <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-2">
-                Clues
+                Definitions
               </p>
-              <ClueList placedWords={grid.placedWords} />
+              <ClueList placedWords={displayPlacedWords} />
             </div>
           )}
         </div>

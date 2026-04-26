@@ -1,8 +1,5 @@
-import { Eye, Gift } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
-import type { GameTheme } from "./types";
 import type { Recipient } from "./types";
 
 interface PublishStepProps {
@@ -11,16 +8,7 @@ interface PublishStepProps {
   onGameTitleChange: (title: string) => void;
   visibility: "private-link" | "public";
   onVisibilityChange: (visibility: "private-link" | "public") => void;
-  canPublish: boolean;
   isPublishing?: boolean;
-  submitError?: string;
-  missingFields: string[];
-  onPublish: () => void;
-  onPreview: () => void;
-  previewDisabled?: boolean;
-  onBack: () => void;
-  backLabel?: string;
-  theme: GameTheme;
   titlePlaceholder?: string;
   children?: React.ReactNode;
 }
@@ -31,16 +19,7 @@ export function PublishStep({
   onGameTitleChange,
   visibility,
   onVisibilityChange,
-  canPublish,
   isPublishing = false,
-  submitError,
-  missingFields,
-  onPublish,
-  onPreview,
-  previewDisabled = false,
-  onBack,
-  backLabel = "← Back",
-  theme,
   titlePlaceholder,
   children,
 }: PublishStepProps) {
@@ -97,66 +76,6 @@ export function PublishStep({
         </div>
 
         {children}
-      </div>
-
-      <div
-        className={cn(
-          "rounded-2xl sm:rounded-3xl bg-linear-to-br p-4 sm:p-6 text-white",
-          theme.publishGradient
-        )}
-      >
-        <p className="font-bold text-base sm:text-lg mb-0.5 sm:mb-1">
-          Ready to share! 🎉
-        </p>
-        <p className="text-white/70 text-xs sm:text-sm mb-3 sm:mb-4 leading-snug">
-          We'll generate a unique link you can send to{" "}
-          {recipient.name || "your recipient"}.
-        </p>
-
-        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-          <Button
-            disabled={!canPublish || isPublishing}
-            onClick={onPublish}
-            className={cn(
-              "flex-1 bg-white hover:bg-white/90 cursor-pointer font-semibold h-10 sm:h-11 rounded-xl gap-2 text-sm",
-              theme.publishButtonText
-            )}
-          >
-            <Gift className="w-4 h-4" />
-            {isPublishing ? "Publishing..." : "Publish & get link"}
-          </Button>
-          <Button
-            variant="outline"
-            onClick={onPreview}
-            disabled={previewDisabled || isPublishing}
-            className="h-10 bg-transparent cursor-pointer hover:text-white sm:h-11 rounded-xl border-white/30 text-white hover:bg-white/10 transition-transform duration-200 hover:scale-105 active:scale-95 w-full sm:w-auto"
-          >
-            <Eye className="w-4 h-4" />
-            <span className="sm:hidden ml-1.5">Preview</span>
-          </Button>
-        </div>
-
-        {!canPublish && missingFields.length > 0 && (
-          <p className="text-white/60 text-[11px] sm:text-xs mt-2.5 sm:mt-3 leading-snug">
-            Please fill in: {missingFields.join(" • ")}
-          </p>
-        )}
-
-        {submitError && (
-          <p className="text-red-100 text-[11px] sm:text-xs mt-2.5 sm:mt-3 leading-snug">
-            {submitError}
-          </p>
-        )}
-      </div>
-
-      <div className="flex justify-start">
-        <Button
-          variant="ghost"
-          onClick={onBack}
-          className="text-muted-foreground text-sm h-9 sm:h-10"
-        >
-          {backLabel}
-        </Button>
       </div>
     </>
   );

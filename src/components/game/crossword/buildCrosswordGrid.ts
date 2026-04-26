@@ -7,9 +7,29 @@ import type {
 } from "./types";
 import { GRID_SIZE } from "./types";
 
+function lcgRand(seed: number) {
+  let s = seed >>> 0;
+  return () => {
+    s = (Math.imul(s, 1664525) + 1013904223) >>> 0;
+    return s / 0x100000000;
+  };
+}
+
+function shuffleWithRand<T>(arr: T[], rand: () => number): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 export function buildCrosswordGrid(
-  words: CrosswordWord[]
+  words: CrosswordWord[],
+  seed = 0
 ): CrosswordGrid | null {
+  const rand = seed !== 0 ? lcgRand(seed) : null;
+
   const validWords = words
     .filter((w) => w.word.trim().length >= 2 && w.clue.trim().length > 0)
     .map((w) => ({ ...w, word: w.word.trim().toUpperCase() }));
@@ -80,12 +100,14 @@ export function buildCrosswordGrid(
     return next;
   }
 
+  let iterCount = 0;
   function tryPlaceAll(
     remaining: CrosswordWord[],
     placed: PlacedWord[],
     grid: string[][]
   ): { placed: PlacedWord[]; grid: string[][] } | null {
     if (remaining.length === 0) return { placed, grid };
+    if (++iterCount > 50_000) return null;
     const current = remaining[0],
       rest = remaining.slice(1),
       word = current.word;
@@ -108,7 +130,21 @@ export function buildCrosswordGrid(
           }
         }
     candidates.sort((a, b) => b.score - a.score);
-    for (const cand of candidates.slice(0, 20)) {
+    // When a seed is given, shuffle within each score tier so rebuild yields a different layout
+    const orderedCandidates = rand
+      ? (() => {
+          const result: typeof candidates = [];
+          let i = 0;
+          while (i < candidates.length) {
+            let j = i;
+            while (j < candidates.length && candidates[j].score === candidates[i].score) j++;
+            result.push(...shuffleWithRand(candidates.slice(i, j), rand));
+            i = j;
+          }
+          return result;
+        })()
+      : candidates;
+    for (const cand of orderedCandidates) {
       const newGrid = placeWord(grid, word, cand.row, cand.col, cand.dir);
       const pw: PlacedWord = {
         wordId: current.id,
@@ -122,10 +158,11 @@ export function buildCrosswordGrid(
       const result = tryPlaceAll(rest, [...placed, pw], newGrid);
       if (result) return result;
     }
-    return tryPlaceAll(rest, placed, grid);
+    return null;
   }
 
-  const sorted = [...validWords].sort((a, b) => b.word.length - a.word.length);
+  const base = rand ? shuffleWithRand(validWords, rand) : validWords;
+  const sorted = [...base].sort((a, b) => b.word.length - a.word.length);
   let grid = makeEmptyGrid();
   const first = sorted[0];
   const startRow = Math.floor(ROWS / 2),

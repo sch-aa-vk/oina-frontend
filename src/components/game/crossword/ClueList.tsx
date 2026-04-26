@@ -8,7 +8,7 @@ export function ClueList({ placedWords }: { placedWords: PlacedWord[] }) {
     .filter((pw) => pw.direction === "down")
     .sort((a, b) => a.number - b.number);
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+    <div className="space-y-3 sm:space-y-4">
       {[
         { label: "Across", words: across },
         { label: "Down", words: down },

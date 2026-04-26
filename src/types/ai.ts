@@ -29,7 +29,7 @@ export interface GenerateEmojiResponse {
 }
 
 export interface GenerateCrosswordRequest {
-  mode: "word-to-definition" | "definition-to-word";
+  mode: "definition-from-word" | "word-from-definition";
   input: string;
   language: SupportedLanguage;
 }

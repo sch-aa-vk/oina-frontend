@@ -94,6 +94,16 @@ export interface PublishGameRequest {
   changeLog?: string;
 }
 
+export interface UpdateGameRequest {
+  title?: string;
+  description?: string;
+  category?: string;
+  tags?: string[];
+  content?: GameContent;
+  changeLog?: string;
+  coverImageContentType?: string;
+}
+
 export interface GameApiError {
   status?: number;
   code?: string;

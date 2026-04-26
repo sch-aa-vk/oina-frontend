@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { memo, useState } from "react";
 import {
   Trash2,
   Sparkles,
@@ -20,12 +20,15 @@ interface WordRowProps {
   onChange: (id: string, changes: Partial<CrosswordWord>) => void;
   onRemove: (id: string) => void;
   canRemove: boolean;
-  isPlaced: boolean;
-  onAiClue?: () => void;
+  isPlaced: boolean | null; // null = grid not generated yet
+  onAiClue?: (wordId: string, word: string) => void;
   isAiLoadingClue?: boolean;
+  onAiWord?: (wordId: string, clue: string) => void;
+  isAiLoadingWord?: boolean;
+  allowedScript?: "latin" | "cyrillic" | null;
 }
 
-export function WordRow({
+export const WordRow = memo(function WordRow({
   word,
   index,
   onChange,
@@ -34,20 +37,31 @@ export function WordRow({
   isPlaced,
   onAiClue,
   isAiLoadingClue = false,
+  onAiWord,
+  isAiLoadingWord = false,
+  allowedScript = null,
 }: WordRowProps) {
   const [expanded, setExpanded] = useState<boolean>(true);
+
   const isComplete =
     word.word.trim().length >= 2 && word.clue.trim().length > 0;
+
+  function filterWord(raw: string): string {
+    const up = raw.toUpperCase();
+    if (allowedScript === "latin") return up.replace(/[^A-Z]/g, "");
+    if (allowedScript === "cyrillic") return up.replace(/[^А-ЯҚӨҮІҒҢҺ]/g, "");
+    return up.replace(/[^A-ZА-ЯҚӨҮІҒҢҺ]/g, "");
+  }
 
   return (
     <div
       className={cn(
         "rounded-xl sm:rounded-2xl border bg-background transition-all duration-200",
-        isComplete && isPlaced
+        isComplete && isPlaced === true
           ? "border-emerald-300/50 dark:border-emerald-700/40"
           : isComplete
-          ? "border-amber-300/50 dark:border-amber-700/40"
-          : "border-border"
+            ? "border-amber-300/50 dark:border-amber-700/40"
+            : "border-border",
       )}
     >
       <div
@@ -76,12 +90,12 @@ export function WordRow({
           )}
         </div>
         <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
-          {isComplete && isPlaced && (
+          {isComplete && isPlaced === true && (
             <div className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-emerald-500 flex items-center justify-center">
               <Check className="w-2 h-2 sm:w-2.5 sm:h-2.5 text-white" />
             </div>
           )}
-          {isComplete && !isPlaced && (
+          {isComplete && isPlaced === false && (
             <Badge
               variant="outline"
               className="text-[10px] sm:text-xs text-amber-600 border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-1.5 sm:px-2"
@@ -89,18 +103,17 @@ export function WordRow({
               Skipped
             </Badge>
           )}
-          {canRemove && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onRemove(word.id);
-              }}
-              className="w-5 h-5 sm:w-6 sm:h-6 rounded-md sm:rounded-lg flex items-center justify-center text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 transition-colors"
-            >
-              <Trash2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-            </button>
-          )}
+          <button
+            type="button"
+            disabled={!canRemove}
+            onClick={(e) => {
+              e.stopPropagation();
+              onRemove(word.id);
+            }}
+            className="w-5 h-5 sm:w-6 sm:h-6 rounded-md sm:rounded-lg flex items-center justify-center transition-colors disabled:opacity-30 disabled:cursor-not-allowed text-muted-foreground/40 hover:enabled:text-destructive hover:enabled:bg-destructive/10"
+          >
+            <Trash2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+          </button>
           {expanded ? (
             <ChevronUp className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground/40" />
           ) : (
@@ -115,19 +128,34 @@ export function WordRow({
               <label className="text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 Word
               </label>
-              <Input
-                placeholder="e.g. PARIS"
-                value={word.word}
-                onChange={(e) =>
-                  onChange(word.id, {
-                    word: e.target.value
-                      .replace(/[^a-zA-Z]/g, "")
-                      .toUpperCase(),
-                  })
-                }
-                className="h-9 sm:h-10 rounded-lg sm:rounded-xl font-bold tracking-widest uppercase text-sm"
-                maxLength={15}
-              />
+              <div className="relative">
+                <Input
+                  placeholder="e.g. PARIS"
+                  value={word.word}
+                  onChange={(e) =>
+                    onChange(word.id, { word: filterWord(e.target.value) })
+                  }
+                  className="h-9 sm:h-10 rounded-lg sm:rounded-xl pr-8 font-bold tracking-widest uppercase text-sm"
+                  maxLength={15}
+                />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-0.5 sm:right-1 top-0.5 sm:top-1 h-7 w-7 sm:h-8 sm:w-8 text-muted-foreground/50 hover:text-primary"
+                  title="AI suggest word from definition"
+                  disabled={word.clue.trim().length < 1 || isAiLoadingWord}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onAiWord?.(word.id, word.clue.trim());
+                  }}
+                >
+                  {isAiLoadingWord ? (
+                    <Loader2 className="w-3 h-3 sm:w-3.5 sm:h-3.5 animate-spin" />
+                  ) : (
+                    <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                  )}
+                </Button>
+              </div>
               <p className="text-[10px] sm:text-xs text-muted-foreground">
                 {word.word.trim().length > 0
                   ? `${word.word.trim().length} letters`
@@ -137,13 +165,15 @@ export function WordRow({
             <div className="space-y-1 sm:space-y-1.5">
               <label className="text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1 sm:gap-1.5">
                 <Lightbulb className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-                Clue
+                Definition
               </label>
               <div className="relative">
                 <Input
-                  placeholder="A hint…"
+                  placeholder="A definition…"
                   value={word.clue}
-                  onChange={(e) => onChange(word.id, { clue: e.target.value })}
+                  onChange={(e) =>
+                    onChange(word.id, { clue: e.target.value })
+                  }
                   className="h-9 sm:h-10 rounded-lg sm:rounded-xl pr-8 text-sm"
                   maxLength={80}
                 />
@@ -151,11 +181,11 @@ export function WordRow({
                   variant="ghost"
                   size="icon"
                   className="absolute right-0.5 sm:right-1 top-0.5 sm:top-1 h-7 w-7 sm:h-8 sm:w-8 text-muted-foreground/50 hover:text-primary"
-                  title="AI suggest clue"
+                  title="AI suggest definition"
                   disabled={word.word.trim().length < 2 || isAiLoadingClue}
                   onClick={(e) => {
                     e.stopPropagation();
-                    onAiClue?.();
+                    onAiClue?.(word.id, word.word.trim());
                   }}
                 >
                   {isAiLoadingClue ? (
@@ -171,4 +201,4 @@ export function WordRow({
       )}
     </div>
   );
-}
+});
