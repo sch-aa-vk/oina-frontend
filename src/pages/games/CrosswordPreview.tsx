@@ -81,15 +81,15 @@ export default function CrosswordPreview() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 sm:gap-6">
-          <div className="lg:col-span-3">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+          <div className="lg:col-span-1">
             <p className="text-[10px] sm:text-xs font-medium text-muted-foreground mb-2 sm:mb-3">
               Click a cell, then type. Click again to switch direction.
             </p>
             <InteractivePreviewGrid grid={grid} />
           </div>
 
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-1 lg:flex lg:flex-col lg:justify-center">
             <div className="rounded-2xl border border-border bg-background p-4 sm:p-5">
               <p className="text-xs sm:text-sm font-semibold mb-2 sm:mb-3">Clues</p>
               <ClueList placedWords={grid.placedWords} />

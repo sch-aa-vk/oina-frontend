@@ -9,6 +9,7 @@ interface PreviewState {
   puzzles: EmojiPuzzle[];
   recipient: Recipient;
   personalMessage: string;
+  showAnswers: boolean;
 }
 
 export default function GuessByEmojiPreview() {
@@ -24,7 +25,7 @@ export default function GuessByEmojiPreview() {
     );
   }
 
-  const { puzzles, recipient, personalMessage } = state;
+  const { puzzles, recipient, personalMessage, showAnswers } = state;
 
   return (
     <div className="min-h-screen">
@@ -52,7 +53,7 @@ export default function GuessByEmojiPreview() {
         puzzles={puzzles}
         recipient={recipient}
         personalMessage={personalMessage}
-        showAnswers={true}
+        showAnswers={showAnswers ?? false}
       />
     </div>
   );

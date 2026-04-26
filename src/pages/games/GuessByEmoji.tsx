@@ -234,7 +234,7 @@ export default function GuessByEmoji() {
       recipient, personalMessage, topic, puzzles, showAnswers, gameTitle, draftGameId, visibility,
     }));
     navigate("/create/guess-by-emoji/preview", {
-      state: { puzzles, recipient, personalMessage },
+      state: { puzzles, recipient, personalMessage, showAnswers },
     });
   };
 
