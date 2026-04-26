@@ -30,6 +30,7 @@ export default function App() {
           <Routes>
             <Route element={<MainLayout />}>
               <Route path="/" element={<Home />} />
+              <Route path="/games/:gameId" element={<GameDetails />} />
             </Route>
 
             <Route element={<ProtectedRoute />}>
@@ -43,7 +44,6 @@ export default function App() {
                 />
                 <Route path="/create/crossword" element={<Crossword />} />
                 <Route path="/create/crossword/preview" element={<CrosswordPreview />} />
-                <Route path="/games/:gameId" element={<GameDetails />} />
                 <Route path="/gift-generator" element={<GiftGenerator />} />
               </Route>
             </Route>
