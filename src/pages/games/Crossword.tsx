@@ -16,9 +16,10 @@ import {
   buildCreateGamePayload,
   buildPublishPayload,
 } from "@/lib/gameMappers";
+import { appCache, CACHE_TTL } from "@/lib/cache";
 import { gamesService } from "@/services/games";
 import { aiService } from "@/services/ai";
-import type { GameVisibility } from "@/types/games";
+import type { GameResponse, GameVisibility } from "@/types/games";
 import type { SupportedLanguage } from "@/types/ai";
 import {
   GameTopBar,
@@ -105,35 +106,43 @@ export default function Crossword() {
   useEffect(() => {
     if (!editGameId) return;
     let cancelled = false;
+
+    const hydrateGame = (game: GameResponse) => {
+      const c = game.content;
+      if (c.recipient) setRecipient(c.recipient as Recipient);
+      if (typeof c.personalMessage === "string") setPersonalMessage(c.personalMessage);
+      if (Array.isArray(c.words)) {
+        setWords(
+          (c.words as CrosswordWord[]).map((w) => ({
+            ...w,
+            id: w.id ?? Math.random().toString(36).slice(2),
+          })),
+        );
+      }
+      const settings = c.settings as Record<string, unknown> | undefined;
+      if (typeof settings?.showSolution === "boolean") setShowSolution(settings.showSolution);
+      setGameTitle(game.title);
+      if (game.visibility === "private-link" || game.visibility === "public") {
+        setVisibility(game.visibility);
+        setWasPublished(true);
+      }
+      if (game.thumbnail) setExistingThumbnail(game.thumbnail);
+    };
+
+    const cached = appCache.get<GameResponse>(`game-${editGameId}`, CACHE_TTL.PERSONAL);
+    if (cached) {
+      hydrateGame(cached);
+      setIsLoadingGame(false);
+      return;
+    }
+
     setIsLoadingGame(true);
     gamesService
       .getGame(editGameId)
       .then((game) => {
         if (cancelled) return;
-        const c = game.content;
-        if (c.recipient) setRecipient(c.recipient as Recipient);
-        if (typeof c.personalMessage === "string")
-          setPersonalMessage(c.personalMessage);
-        if (Array.isArray(c.words)) {
-          setWords(
-            (c.words as CrosswordWord[]).map((w) => ({
-              ...w,
-              id: w.id ?? Math.random().toString(36).slice(2),
-            })),
-          );
-        }
-        const settings = c.settings as Record<string, unknown> | undefined;
-        if (typeof settings?.showSolution === "boolean")
-          setShowSolution(settings.showSolution);
-        setGameTitle(game.title);
-        if (
-          game.visibility === "private-link" ||
-          game.visibility === "public"
-        ) {
-          setVisibility(game.visibility);
-          setWasPublished(true);
-        }
-        if (game.thumbnail) setExistingThumbnail(game.thumbnail);
+        appCache.set(`game-${editGameId}`, game);
+        hydrateGame(game);
       })
       .catch(() => {
         if (!cancelled) setLoadError("Failed to load game. Please try again.");
@@ -396,6 +405,10 @@ export default function Crossword() {
         if (coverFile && updateResult.coverUploadUrl) {
           await gamesService.uploadGameCover(updateResult.coverUploadUrl, coverFile);
         }
+        if (wasPublished) {
+          await gamesService.publishGame(editGameId, buildPublishPayload(visibility));
+        }
+        appCache.set(`game-${editGameId}`, updateResult);
       } else if (draftGameId) {
         const updateResult = await gamesService.updateGame(draftGameId, {
           title,

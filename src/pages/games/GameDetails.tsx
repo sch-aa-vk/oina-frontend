@@ -3,7 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { requestHistoryRefresh } from "@/lib/cache";
+import { appCache, CACHE_TTL, requestHistoryRefresh } from "@/lib/cache";
 import { gamesService } from "@/services/games";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -72,6 +72,14 @@ export default function GameDetails() {
       setErrorMessage("");
 
       try {
+        const cached = appCache.get<GameResponse>(`game-${gameId}`, CACHE_TTL.PUBLIC);
+        if (cached) {
+          setGame(cached);
+          setState("ready");
+          setLocalLikeCount(cached.likeCount);
+          return;
+        }
+
         const baseGame = await gamesService.getGame(gameId);
 
         if (!active) {
@@ -101,6 +109,7 @@ export default function GameDetails() {
         setLocalLikeCount(baseGame.likeCount);
 
         if (baseGame.visibility !== "draft") {
+          appCache.set(`game-${gameId}`, baseGame);
           gamesService.trackView(gameId).catch(() => {
             /* silently ignore */
           });

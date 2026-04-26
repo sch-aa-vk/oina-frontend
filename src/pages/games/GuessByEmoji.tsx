@@ -5,9 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { mapGuessByEmojiContent, buildCreateGamePayload, buildPublishPayload, validateCreatePayload } from "@/lib/gameMappers";
+import { appCache, CACHE_TTL } from "@/lib/cache";
 import { gamesService } from "@/services/games";
 import { aiService } from "@/services/ai";
-import type { GameVisibility } from "@/types/games";
+import type { GameResponse, GameVisibility } from "@/types/games";
 import {
   GameTopBar,
   RecipientStep,
@@ -59,27 +60,40 @@ export default function GuessByEmoji() {
   useEffect(() => {
     if (!editGameId) return;
     let cancelled = false;
+
+    const hydrateGame = (game: GameResponse) => {
+      const c = game.content;
+      if (c.recipient) setRecipient(c.recipient as Recipient);
+      if (typeof c.personalMessage === "string") setPersonalMessage(c.personalMessage);
+      if (Array.isArray(c.puzzles)) {
+        setPuzzles((c.puzzles as EmojiPuzzle[]).map((p) => ({
+          ...p,
+          id: p.id ?? Math.random().toString(36).slice(2),
+        })));
+      }
+      const settings = c.settings as Record<string, unknown> | undefined;
+      if (typeof settings?.showAnswers === "boolean") setShowAnswers(settings.showAnswers);
+      setGameTitle(game.title);
+      if (game.visibility === "private-link" || game.visibility === "public") {
+        setVisibility(game.visibility);
+        setWasPublished(true);
+      }
+      if (game.thumbnail) setExistingThumbnail(game.thumbnail);
+    };
+
+    const cached = appCache.get<GameResponse>(`game-${editGameId}`, CACHE_TTL.PERSONAL);
+    if (cached) {
+      hydrateGame(cached);
+      setIsLoadingGame(false);
+      return;
+    }
+
     setIsLoadingGame(true);
     gamesService.getGame(editGameId)
       .then((game) => {
         if (cancelled) return;
-        const c = game.content;
-        if (c.recipient) setRecipient(c.recipient as Recipient);
-        if (typeof c.personalMessage === "string") setPersonalMessage(c.personalMessage);
-        if (Array.isArray(c.puzzles)) {
-          setPuzzles((c.puzzles as EmojiPuzzle[]).map((p) => ({
-            ...p,
-            id: p.id ?? Math.random().toString(36).slice(2),
-          })));
-        }
-        const settings = c.settings as Record<string, unknown> | undefined;
-        if (typeof settings?.showAnswers === "boolean") setShowAnswers(settings.showAnswers);
-        setGameTitle(game.title);
-        if (game.visibility === "private-link" || game.visibility === "public") {
-          setVisibility(game.visibility);
-          setWasPublished(true);
-        }
-        if (game.thumbnail) setExistingThumbnail(game.thumbnail);
+        appCache.set(`game-${editGameId}`, game);
+        hydrateGame(game);
       })
       .catch(() => {
         if (!cancelled) setLoadError("Failed to load game. Please try again.");

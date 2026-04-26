@@ -4,9 +4,10 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { mapChooseMeContent, buildCreateGamePayload, buildPublishPayload, validateCreatePayload } from "@/lib/gameMappers";
+import { appCache, CACHE_TTL } from "@/lib/cache";
 import { gamesService } from "@/services/games";
 import { aiService } from "@/services/ai";
-import type { GameVisibility } from "@/types/games";
+import type { GameResponse, GameVisibility } from "@/types/games";
 import {
   GameTopBar,
   RecipientStep,
@@ -59,22 +60,35 @@ export default function ChooseMe() {
   useEffect(() => {
     if (!editGameId) return;
     let cancelled = false;
+
+    const hydrateGame = (game: GameResponse) => {
+      const c = game.content;
+      if (c.recipient) setRecipient(c.recipient as Recipient);
+      if (typeof c.personalMessage === "string") setPersonalMessage(c.personalMessage);
+      if (Array.isArray(c.questions)) setQuestions(c.questions as ReturnType<typeof createDefaultQuestion>[]);
+      const settings = c.settings as Record<string, unknown> | undefined;
+      if (typeof settings?.shuffle === "boolean") setShuffle(settings.shuffle);
+      setGameTitle(game.title);
+      if (game.visibility === "private-link" || game.visibility === "public") {
+        setVisibility(game.visibility);
+        setWasPublished(true);
+      }
+      if (game.thumbnail) setExistingThumbnail(game.thumbnail);
+    };
+
+    const cached = appCache.get<GameResponse>(`game-${editGameId}`, CACHE_TTL.PERSONAL);
+    if (cached) {
+      hydrateGame(cached);
+      setIsLoadingGame(false);
+      return;
+    }
+
     setIsLoadingGame(true);
     gamesService.getGame(editGameId)
       .then((game) => {
         if (cancelled) return;
-        const c = game.content;
-        if (c.recipient) setRecipient(c.recipient as Recipient);
-        if (typeof c.personalMessage === "string") setPersonalMessage(c.personalMessage);
-        if (Array.isArray(c.questions)) setQuestions(c.questions as ReturnType<typeof createDefaultQuestion>[]);
-        const settings = c.settings as Record<string, unknown> | undefined;
-        if (typeof settings?.shuffle === "boolean") setShuffle(settings.shuffle);
-        setGameTitle(game.title);
-        if (game.visibility === "private-link" || game.visibility === "public") {
-          setVisibility(game.visibility);
-          setWasPublished(true);
-        }
-        if (game.thumbnail) setExistingThumbnail(game.thumbnail);
+        appCache.set(`game-${editGameId}`, game);
+        hydrateGame(game);
       })
       .catch(() => {
         if (!cancelled) setLoadError("Failed to load game. Please try again.");
