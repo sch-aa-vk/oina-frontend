@@ -84,6 +84,10 @@ export default function Crossword() {
     useState<Extract<GameVisibility, "private-link" | "public">>(
       "private-link",
     );
+  const [originalVisibility, setOriginalVisibility] =
+    useState<Extract<GameVisibility, "private-link" | "public">>(
+      "private-link",
+    );
   const [isPublishing, setIsPublishing] = useState<boolean>(false);
   const [draftGameId, setDraftGameId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState<boolean>(false);
@@ -124,6 +128,7 @@ export default function Crossword() {
       setGameTitle(game.title);
       if (game.visibility === "private-link" || game.visibility === "public") {
         setVisibility(game.visibility);
+        setOriginalVisibility(game.visibility);
         setWasPublished(true);
       }
       if (game.thumbnail) setExistingThumbnail(game.thumbnail);
@@ -405,7 +410,7 @@ export default function Crossword() {
         if (coverFile && updateResult.coverUploadUrl) {
           await gamesService.uploadGameCover(updateResult.coverUploadUrl, coverFile);
         }
-        if (wasPublished) {
+        if (wasPublished && visibility !== originalVisibility) {
           await gamesService.publishGame(editGameId, buildPublishPayload(visibility));
         }
         appCache.set(`game-${editGameId}`, updateResult);

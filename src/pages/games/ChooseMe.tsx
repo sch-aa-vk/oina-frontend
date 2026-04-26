@@ -52,7 +52,10 @@ export default function ChooseMe() {
   const [gameTitle, setGameTitle] = useState<string>("");
   const [shuffle, setShuffle] = useState<boolean>(false);
   const [visibility, setVisibility] = useState<Extract<GameVisibility, "private-link" | "public">>("private-link");
+  const [originalVisibility, setOriginalVisibility] = useState<Extract<GameVisibility, "private-link" | "public">>("private-link");
   const [isPublishing, setIsPublishing] = useState<boolean>(false);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [saveSuccess, setSaveSuccess] = useState<boolean>(false);
   const [draftGameId, setDraftGameId] = useState<string | null>(null);
   const [topic, setTopic] = useState<string>("");
   const [isAiLoading, setIsAiLoading] = useState<boolean>(false);
@@ -74,6 +77,7 @@ export default function ChooseMe() {
       const c = game.content;
       if (c.recipient) setRecipient(c.recipient as Recipient);
       if (typeof c.personalMessage === "string") setPersonalMessage(c.personalMessage);
+      if (typeof c.topic === "string") setTopic(c.topic);
       if (Array.isArray(c.outcomes)) setOutcomes(c.outcomes as GameOutcome[]);
       if (Array.isArray(c.questions)) setQuestions(c.questions as ReturnType<typeof createDefaultQuestion>[]);
       const settings = c.settings as Record<string, unknown> | undefined;
@@ -81,6 +85,7 @@ export default function ChooseMe() {
       setGameTitle(game.title);
       if (game.visibility === "private-link" || game.visibility === "public") {
         setVisibility(game.visibility);
+        setOriginalVisibility(game.visibility);
         setWasPublished(true);
       }
       if (game.thumbnail) setExistingThumbnail(game.thumbnail);
@@ -219,13 +224,70 @@ export default function ChooseMe() {
   };
   const canPublish = Object.values(completeness).every(Boolean);
 
+  const handleSaveDraft = async (): Promise<void> => {
+    if (isSaving) return;
+    setIsSaving(true);
+    setSaveSuccess(false);
+
+    const title =
+      gameTitle.trim() ||
+      (recipient.name ? `Choose Me for ${recipient.name}` : "My Choose Me");
+    const content = mapChooseMeContent({ recipient, personalMessage, topic, outcomes, questions, shuffle });
+
+    try {
+      if (isEditMode && editGameId) {
+        const updateResult = await gamesService.updateGame(editGameId, {
+          title,
+          content,
+          coverImageContentType: coverFile ? coverFile.type : undefined,
+        });
+        if (coverFile && updateResult.coverUploadUrl) {
+          await gamesService.uploadGameCover(updateResult.coverUploadUrl, coverFile);
+        }
+        if (wasPublished && visibility !== originalVisibility) {
+          await gamesService.publishGame(editGameId, buildPublishPayload(visibility));
+        }
+        appCache.set(`game-${editGameId}`, updateResult);
+      } else if (draftGameId) {
+        const updateResult = await gamesService.updateGame(draftGameId, {
+          title,
+          content,
+          coverImageContentType: coverFile ? coverFile.type : undefined,
+        });
+        if (coverFile && updateResult.coverUploadUrl) {
+          await gamesService.uploadGameCover(updateResult.coverUploadUrl, coverFile);
+        }
+      } else {
+        const payload = buildCreateGamePayload(
+          "choose-me",
+          { title, recipient, personalMessage },
+          content
+        );
+        const draft = await gamesService.createGame({
+          ...payload,
+          coverImageContentType: coverFile ? coverFile.type : undefined,
+        });
+        setDraftGameId(draft.gameId);
+        if (coverFile && draft.coverUploadUrl) {
+          await gamesService.uploadGameCover(draft.coverUploadUrl, coverFile);
+        }
+      }
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 2000);
+    } catch {
+      // silent — user can retry
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handlePublish = async (): Promise<void> => {
     if (isPublishing || !canPublish) return;
 
     setIsPublishing(true);
 
     try {
-      const content = mapChooseMeContent({ recipient, personalMessage, outcomes, questions, shuffle });
+      const content = mapChooseMeContent({ recipient, personalMessage, topic, outcomes, questions, shuffle });
 
       if (isEditMode && editGameId) {
         const updateResult = await gamesService.updateGame(editGameId, {
@@ -319,6 +381,9 @@ export default function ChooseMe() {
         canPublish={canPublish}
         onPublish={handlePublish}
         isPublishing={isPublishing}
+        onSave={handleSaveDraft}
+        isSaving={isSaving}
+        saveSuccess={saveSuccess}
         isPublished={wasPublished}
         theme={CHOOSE_ME_THEME}
       />

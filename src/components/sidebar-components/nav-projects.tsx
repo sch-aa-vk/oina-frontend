@@ -197,7 +197,7 @@ export function NavProjects() {
                       {result.gameTitle ?? "Deleted game"}
                     </span>
                     <span className="ml-auto text-[10px] text-muted-foreground shrink-0">
-                      {result.score}/{result.maxScore}
+                      {(result.score !== undefined && result.maxScore !== undefined) ? `${result.score}/${result.maxScore}` : ""}
                     </span>
                   </NavLink>
                 </SidebarMenuButton>

@@ -27,6 +27,7 @@ interface BaseBuilderInput {
 export function mapChooseMeContent(input: {
   recipient: Recipient;
   personalMessage: string;
+  topic: string;
   outcomes: GameOutcome[];
   questions: Question[];
   shuffle: boolean;
@@ -34,6 +35,7 @@ export function mapChooseMeContent(input: {
   return {
     recipient: input.recipient,
     personalMessage: input.personalMessage,
+    topic: input.topic,
     outcomes: input.outcomes,
     questions: input.questions,
     settings: {
