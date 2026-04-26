@@ -47,7 +47,7 @@ export function PublishStep({
             value={gameTitle}
             onChange={(e) => onGameTitleChange(e.target.value)}
             disabled={isPublishing}
-            className="h-10 sm:h-11 rounded-lg sm:rounded-xl text-sm"
+            className="h-10 sm:h-11 rounded-lg sm:rounded-xl md:text-sm"
           />
         </div>
 

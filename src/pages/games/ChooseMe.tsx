@@ -441,7 +441,7 @@ export default function ChooseMe() {
                 placeholder={`e.g. "Perfect date night for ${recipient.name || "them"}"`}
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
-                className="text-sm"
+                className="md:text-sm"
               />
             </div>
 
@@ -478,7 +478,7 @@ export default function ChooseMe() {
                         placeholder="Outcome title (e.g. Romantic dinner)"
                         value={outcome.title}
                         onChange={(e) => updateOutcome(i, "title", e.target.value)}
-                        className="flex-1 text-sm font-medium"
+                        className="flex-1 md:text-sm font-medium"
                       />
                       {outcomes.length > 2 && (
                         <button

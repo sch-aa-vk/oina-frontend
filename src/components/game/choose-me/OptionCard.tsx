@@ -44,13 +44,13 @@ export function OptionCard({
           placeholder={`Option ${index + 1}…`}
           value={option.text}
           onChange={(e) => onChange(index, "text", e.target.value)}
-          className="border-0 bg-transparent px-0 text-xs sm:text-sm font-medium placeholder:text-muted-foreground/50 focus-visible:ring-0 h-auto py-1"
+          className="border-0 bg-transparent px-0 text-base sm:text-sm font-medium placeholder:text-muted-foreground/50 focus-visible:ring-0 h-auto py-1"
         />
         <select
           value={option.outcomeId}
           onChange={(e) => onChange(index, "outcomeId", e.target.value)}
           className={cn(
-            "text-[10px] sm:text-xs rounded-lg border px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-primary transition-colors bg-transparent",
+            "w-full sm:w-auto text-base sm:text-xs rounded-lg border px-2 py-1.5 sm:px-1.5 sm:py-0.5 focus:outline-none focus:ring-1 focus:ring-primary transition-colors bg-transparent",
             selectedOutcome
               ? "border-violet-300 text-violet-700 dark:text-violet-300 dark:border-violet-700"
               : "border-dashed border-border text-muted-foreground"

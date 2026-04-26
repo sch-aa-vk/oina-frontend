@@ -53,7 +53,7 @@ export function RecipientStep({
             onChange={(e) =>
               onRecipientChange({ ...recipient, name: e.target.value })
             }
-            className="h-10 sm:h-11 rounded-lg sm:rounded-xl text-sm"
+            className="h-10 sm:h-11 rounded-lg sm:rounded-xl md:text-sm"
           />
         </div>
 
@@ -96,7 +96,7 @@ export function RecipientStep({
             placeholder={messagePlaceholder}
             value={personalMessage}
             onChange={(e) => onPersonalMessageChange(e.target.value)}
-            className="rounded-lg sm:rounded-xl resize-none min-h-20 sm:min-h-22.5 text-sm"
+            className="rounded-lg sm:rounded-xl resize-none min-h-20 sm:min-h-22.5 md:text-sm"
             maxLength={280}
           />
           <p className="text-[11px] sm:text-xs text-right text-muted-foreground">

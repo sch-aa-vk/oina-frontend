@@ -434,7 +434,7 @@ export default function GuessByEmoji() {
                 placeholder={`e.g. "Our favourite movies with ${recipient.name || "them"}"`}
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
-                className="text-sm"
+                className="md:text-sm"
               />
             </div>
 

@@ -339,7 +339,7 @@ export default function Profile() {
                 <Input
                   value={tempBio}
                   onChange={(e) => setTempBio(e.target.value)}
-                  className="w-full text-sm md:text-sm h-auto border-t-0 border-r-0 border-l-0 rounded-none bg-transparent shadow-none px-0 py-0 focus:bg-transparent focus-visible:ring-0 text-muted-foreground"
+                  className="w-full md:text-sm h-auto border-t-0 border-r-0 border-l-0 rounded-none bg-transparent shadow-none px-0 py-0 focus:bg-transparent focus-visible:ring-0 text-muted-foreground"
                   placeholder="Short bio"
                 />
                 {saveError && (
