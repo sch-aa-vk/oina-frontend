@@ -541,6 +541,7 @@ export default function GuessByEmoji() {
               visibility={visibility}
               onVisibilityChange={setVisibility}
               isPublishing={isPublishing}
+              gameId={editGameId ?? undefined}
               titlePlaceholder={`e.g. "Can you decode us?" for ${recipient.name || "them"}`}
             >
               <div className="space-y-1.5 sm:space-y-2">

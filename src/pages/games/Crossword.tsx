@@ -324,7 +324,7 @@ export default function Crossword() {
     const completeCount = wordsRef.current.filter(
       (w) => w.word.trim().length >= 2 && w.clue.trim(),
     ).length;
-    if (completeCount > 3) buildGrid();
+    if (completeCount >= 3) buildGrid();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoadingGame]);
 
@@ -709,6 +709,7 @@ export default function Crossword() {
               visibility={visibility}
               onVisibilityChange={setVisibility}
               isPublishing={isPublishing}
+              gameId={editGameId ?? undefined}
               titlePlaceholder={`e.g. "Our Story in Words" for ${
                 recipient.name || "them"
               }`}

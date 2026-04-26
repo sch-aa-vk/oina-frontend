@@ -595,6 +595,7 @@ export default function ChooseMe() {
               visibility={visibility}
               onVisibilityChange={setVisibility}
               isPublishing={isPublishing}
+              gameId={editGameId ?? undefined}
               titlePlaceholder={`e.g. "Which date spot fits you?" for ${
                 recipient.name || "them"
               }`}

@@ -1,6 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { Recipient } from "./types";
+import { useCallback, useState } from "react";
+import { Check, Copy } from "lucide-react";
 
 interface PublishStepProps {
   recipient: Recipient;
@@ -10,6 +12,7 @@ interface PublishStepProps {
   onVisibilityChange: (visibility: "private-link" | "public") => void;
   isPublishing?: boolean;
   titlePlaceholder?: string;
+  gameId?: string;
   children?: React.ReactNode;
 }
 
@@ -21,8 +24,24 @@ export function PublishStep({
   onVisibilityChange,
   isPublishing = false,
   titlePlaceholder,
+  gameId,
   children,
 }: PublishStepProps) {
+  const [isCopied, setIsCopied] = useState(false);
+
+  const shareLink = gameId ? `${window.location.origin}/games/${gameId}` : "";
+
+  const handleCopyLink = useCallback(() => {
+    if (!shareLink) return;
+    navigator.clipboard
+      .writeText(shareLink)
+      .then(() => {
+        setIsCopied(true);
+        setTimeout(() => setIsCopied(false), 2000);
+      })
+      .catch(() => {});
+  }, [shareLink]);
+
   const placeholder =
     titlePlaceholder ??
     `e.g. "A game just for you" for ${recipient.name || "them"}`;
@@ -73,6 +92,30 @@ export function PublishStep({
               Public
             </Button>
           </div>
+          {gameId && (
+            <div className="space-y-1.5 sm:space-y-2">
+              <p className="text-xs sm:text-sm font-medium">Share link</p>
+              <div className="relative">
+                <Input
+                  readOnly
+                  value={shareLink}
+                  className="h-10 sm:h-11 rounded-lg sm:rounded-xl pr-10 text-xs text-muted-foreground select-all"
+                />
+                <button
+                  type="button"
+                  onClick={handleCopyLink}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors"
+                  title={isCopied ? "Copied!" : "Copy link"}
+                >
+                  {isCopied ? (
+                    <Check className="size-4 text-green-500" />
+                  ) : (
+                    <Copy className="size-4" />
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {children}
