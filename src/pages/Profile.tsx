@@ -42,6 +42,7 @@ import type { AvatarContentType } from "@/services/users";
 import type { MyGiftItem } from "@/services/giftSite";
 import type { GameResponse } from "@/types/games";
 import type { User } from "@/types/auth";
+import { compressImage } from "@/utils/imageUtils";
 
 const ALLOWED_AVATAR_TYPES: AvatarContentType[] = [
   "image/jpeg",
@@ -150,10 +151,11 @@ export default function Profile() {
     setIsUploadingAvatar(true);
     setAvatarError("");
     try {
+      const compressed = await compressImage(file);
       const { presignedUrl, avatarUrl } = await usersService.uploadAvatar(
-        file.type as AvatarContentType,
+        compressed.type as AvatarContentType,
       );
-      await usersService.putFileToS3(presignedUrl, file);
+      await usersService.putFileToS3(presignedUrl, compressed);
       const newUser = { ...user!, avatarUrl };
       appCache.set("me", newUser);
       setUser(newUser);

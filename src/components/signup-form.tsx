@@ -44,7 +44,9 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
       navigate(`/verify-email?email=${encodeURIComponent(email)}`);
     } catch (err) {
       if (isAxiosError(err)) {
-        setError(err.response?.data?.message ?? "Registration failed.");
+        const errorMessage = err.response?.data?.message || "Registration failed.";
+        const errorDetails = Object.values(err.response?.data?.details || {}).flat().join(" ");
+        setError(`${errorMessage} ${errorDetails}`.trim());
       } else {
         setError("Something went wrong.");
       }
@@ -85,7 +87,7 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
                 required
               />
               <FieldDescription>
-                Must be at least 8 characters long.
+                Must be at least 8 characters long. Contain a mix of uppercase, lowercase, numbers, and symbols.
               </FieldDescription>
             </Field>
             <Field>
@@ -99,9 +101,8 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
               />
+              {error && <p className="text-sm text-destructive">{error}</p>}
             </Field>
-
-            {error && <p className="text-sm text-destructive">{error}</p>}
 
             <FieldGroup>
               <Field>

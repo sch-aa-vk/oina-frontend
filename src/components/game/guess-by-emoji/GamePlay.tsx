@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Heart, ChevronRight, Lightbulb } from "lucide-react";
+import { ChevronRight, Lightbulb } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -16,11 +16,6 @@ interface GamePlayProps {
   personalMessage: string;
   showAnswers: boolean;
   onComplete?: (score: number, total: number) => void;
-  isLiked?: boolean;
-  likeCount?: number;
-  onToggleLike?: () => void;
-  isLiking?: boolean;
-  isAuthenticated?: boolean;
 }
 
 export function GamePlay({
@@ -29,11 +24,6 @@ export function GamePlay({
   personalMessage,
   showAnswers,
   onComplete,
-  isLiked,
-  likeCount,
-  onToggleLike,
-  isLiking,
-  isAuthenticated,
 }: GamePlayProps) {
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [guess, setGuess] = useState<string>("");
@@ -103,26 +93,6 @@ export function GamePlay({
                   : "Keep practicing! 🎮"}
           </p>
         </div>
-
-        {onToggleLike && (
-          <button
-            onClick={onToggleLike}
-            disabled={isLiking || !isAuthenticated}
-            title={!isAuthenticated ? "Sign in to like" : undefined}
-            className={cn(
-              "flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border transition-colors text-sm font-medium",
-              isLiked
-                ? "bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-800 text-rose-500"
-                : "border-border text-muted-foreground hover:text-rose-500 hover:border-rose-300 disabled:opacity-50",
-            )}
-          >
-            <Heart className={cn("size-4", isLiked && "fill-current")} />
-            {isLiked ? "Liked!" : "Like this game"}
-            {likeCount !== undefined && (
-              <span className="text-xs opacity-60">({likeCount})</span>
-            )}
-          </button>
-        )}
 
         <Button
           onClick={handlePlayAgain}

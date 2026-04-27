@@ -35,7 +35,9 @@ export function VerifyEmailForm() {
       navigate("/login", { state: { verified: true } });
     } catch (err) {
       if (isAxiosError(err)) {
-        setError(err.response?.data?.message ?? "Verification failed.");
+        const errorMessage = err.response?.data?.message || "Verification failed.";
+        const errorDetails = Object.values(err.response?.data?.details || {}).flat().join(" ");
+        setError(`${errorMessage} ${errorDetails}`.trim());
       } else {
         setError("Something went wrong.");
       }
@@ -80,9 +82,9 @@ export function VerifyEmailForm() {
                 onChange={(e) => setCode(e.target.value)}
                 required
               />
+              {error && <p className="text-sm text-destructive">{error}</p>}
             </Field>
 
-            {error && <p className="text-sm text-destructive">{error}</p>}
             {resendSuccess && (
               <p className="text-sm text-green-600">Code resent successfully!</p>
             )}

@@ -229,11 +229,6 @@ export default function GameDetails() {
           personalMessage={personalMessage}
           shuffle={settings.shuffle || false}
           onComplete={handleChooseMeComplete}
-          isLiked={isLiked}
-          likeCount={localLikeCount}
-          onToggleLike={handleToggleLike}
-          isLiking={isLiking}
-          isAuthenticated={isAuthenticated}
         />
       );
     }
@@ -248,11 +243,6 @@ export default function GameDetails() {
           personalMessage={personalMessage}
           showAnswers={settings.showAnswers || false}
           onComplete={handleGameComplete}
-          isLiked={isLiked}
-          likeCount={localLikeCount}
-          onToggleLike={handleToggleLike}
-          isLiking={isLiking}
-          isAuthenticated={isAuthenticated}
         />
       );
     }
@@ -282,17 +272,12 @@ export default function GameDetails() {
           personalMessage={personalMessage}
           showSolution={settings.showSolution || false}
           onComplete={handleGameComplete}
-          isLiked={isLiked}
-          likeCount={localLikeCount}
-          onToggleLike={handleToggleLike}
-          isLiking={isLiking}
-          isAuthenticated={isAuthenticated}
         />
       );
     }
 
     return null;
-  }, [game, handleGameComplete, handleChooseMeComplete, isLiked, localLikeCount, handleToggleLike, isLiking, isAuthenticated]);
+  }, [game, handleGameComplete, handleChooseMeComplete]);
 
   if (gamePlayContent && game?.visibility !== "draft") {
     return (
