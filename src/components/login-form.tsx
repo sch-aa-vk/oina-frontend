@@ -45,7 +45,9 @@ export function LoginForm({
       navigate("/");
     } catch (err) {
       if (isAxiosError(err)) {
-        setError(err.response?.data?.message ?? "Login failed.");
+          const errorMessage = err.response?.data?.message || "Login failed.";
+        const errorDetails = Object.values(err.response?.data?.details || {}).flat().join(" ");
+        setError(`${errorMessage} ${errorDetails}`.trim());
       } else {
         setError("Something went wrong.");
       }
@@ -105,9 +107,8 @@ export function LoginForm({
                   onChange={(e) => setPassword(e.target.value)}
                   required
                 />
+                {error && <p className="text-sm text-destructive">{error}</p>}
               </Field>
-
-              {error && <p className="text-sm text-destructive">{error}</p>}
 
               <Field>
                 <Button type="submit" disabled={isLoading}>

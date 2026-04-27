@@ -41,7 +41,9 @@ export function ResetPasswordForm() {
       navigate("/login", { state: { passwordReset: true } });
     } catch (err) {
       if (isAxiosError(err)) {
-        setError(err.response?.data?.message ?? "Reset failed.");
+        const errorMessage = err.response?.data?.message || "Reset failed.";
+        const errorDetails = Object.values(err.response?.data?.details || {}).flat().join(" ");
+        setError(`${errorMessage} ${errorDetails}`.trim());
       } else {
         setError("Something went wrong.");
       }
@@ -83,7 +85,7 @@ export function ResetPasswordForm() {
                 onChange={(e) => setNewPassword(e.target.value)}
                 required
               />
-              <FieldDescription>Must be at least 8 characters long.</FieldDescription>
+              <FieldDescription>Must be at least 8 characters long. Contain a mix of uppercase, lowercase, numbers, and symbols.</FieldDescription>
             </Field>
             <Field>
               <FieldLabel htmlFor="confirm-password">Confirm Password</FieldLabel>
@@ -94,9 +96,8 @@ export function ResetPasswordForm() {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
               />
+              {error && <p className="text-sm text-destructive">{error}</p>}
             </Field>
-
-            {error && <p className="text-sm text-destructive">{error}</p>}
 
             <Field>
               <Button type="submit" disabled={isLoading}>

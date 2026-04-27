@@ -1,6 +1,5 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import {
-  Lightbulb,
   RefreshCw,
   Grid3X3,
   AlertCircle,
@@ -21,13 +20,13 @@ import { gamesService } from "@/services/games";
 import { aiService } from "@/services/ai";
 import type { GameResponse, GameVisibility } from "@/types/games";
 import type { SupportedLanguage } from "@/types/ai";
+import { compressImage } from "@/utils/imageUtils";
 import {
   GameTopBar,
   RecipientStep,
   AiBanner,
   AddItemButton,
   SummaryCard,
-  ToggleSetting,
   PublishStep,
   CROSSWORD_THEME,
 } from "@/components/game";
@@ -48,7 +47,7 @@ import type { CrosswordGrid, CrosswordWord } from "@/components/game/crossword";
 export default function Crossword() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const editGameId = searchParams.get("gameId");
+  const [editGameId, setEditGameId] = useState<string | null>(searchParams.get("gameId"));
   const isEditMode = editGameId !== null;
 
   const [step, setStep] = useState<number>(() => {
@@ -106,6 +105,7 @@ export default function Crossword() {
   const [existingThumbnail, setExistingThumbnail] = useState<string | null>(
     null,
   );
+  const navigatingToPreview = useRef(false);
 
   useEffect(() => {
     if (!editGameId) return;
@@ -184,7 +184,12 @@ export default function Crossword() {
     } catch { /* corrupted — ignore */ }
   }, []);
 
+  useEffect(() => () => {
+    if (!navigatingToPreview.current) localStorage.removeItem("cw:draft");
+  }, []);
+
   const handlePreview = (): void => {
+    navigatingToPreview.current = true;
     localStorage.setItem("cw:draft", JSON.stringify({
       recipient, personalMessage, words, grid, gameTitle, showSolution, clueLanguage, draftGameId, visibility,
     }));
@@ -358,11 +363,12 @@ export default function Crossword() {
         if (coverFile && updateResult.coverUploadUrl) {
           await gamesService.uploadGameCover(updateResult.coverUploadUrl, coverFile);
         }
-        const published = await gamesService.publishGame(
+        const response = await gamesService.publishGame(
           editGameId,
           buildPublishPayload(visibility),
         );
-        navigate(`/games/${published.gameId}`);
+        setWasPublished(true);
+        setEditGameId(response.gameId);
         return;
       }
 
@@ -399,11 +405,12 @@ export default function Crossword() {
         }
       }
 
-      const published = await gamesService.publishGame(
+      const response = await gamesService.publishGame(
         gameIdForPublish,
         buildPublishPayload(visibility),
       );
-      navigate(`/games/${published.gameId}`);
+      setWasPublished(true);
+      setEditGameId(response.gameId);
     } catch {
       // silent — user can retry
     } finally {
@@ -602,7 +609,7 @@ export default function Crossword() {
                 )}
               </div>
 
-              <div className="hidden lg:block lg:col-span-2">
+              <div className="lg:block lg:col-span-2">
                 <div className="sticky top-24 space-y-3">
                   <div className="flex items-center justify-between">
                     <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
@@ -691,7 +698,6 @@ export default function Crossword() {
               </Button>
               <Button
                 onClick={() => setStep(3)}
-                disabled={!grid}
                 className="h-10 sm:h-11 px-6 rounded-xl order-1 sm:order-2"
               >
                 Continue to publish →
@@ -754,11 +760,12 @@ export default function Crossword() {
                         type="file"
                         accept="image/jpeg,image/png,image/webp"
                         className="hidden"
-                        onChange={(e) => {
+                        onChange={async (e) => {
                           const file = e.target.files?.[0];
                           if (!file) return;
-                          setCoverFile(file);
-                          setCoverPreviewUrl(URL.createObjectURL(file));
+                          const compressed = await compressImage(file);
+                          setCoverFile(compressed);
+                          setCoverPreviewUrl(URL.createObjectURL(compressed));
                           e.target.value = "";
                         }}
                       />
@@ -785,13 +792,6 @@ export default function Crossword() {
                   </label>
                 )}
               </div>
-              <ToggleSetting
-                icon={Lightbulb}
-                label='Allow "Reveal solution"'
-                description="Let the player peek at answers if they get stuck"
-                value={showSolution}
-                onChange={setShowSolution}
-              />
             </PublishStep>
 
             <SummaryCard

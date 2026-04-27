@@ -11,6 +11,7 @@ import { gamesService } from "@/services/games";
 import { aiService } from "@/services/ai";
 import type { GameResponse, GameVisibility } from "@/types/games";
 import type { SupportedLanguage } from "@/types/ai";
+import { compressImage } from "@/utils/imageUtils";
 import {
   GameTopBar,
   RecipientStep,
@@ -35,7 +36,7 @@ const DRAFT_KEY = "ge:draft";
 export default function GuessByEmoji() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const editGameId = searchParams.get("gameId");
+  const [editGameId, setEditGameId] = useState<string | null>(searchParams.get("gameId"));
   const isEditMode = editGameId !== null;
 
   const step = Number(searchParams.get("step") ?? "1");
@@ -67,6 +68,7 @@ export default function GuessByEmoji() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [wasPublished, setWasPublished] = useState<boolean>(false);
   const [existingThumbnail, setExistingThumbnail] = useState<string | null>(null);
+  const navigatingToPreview = useRef(false);
 
   const detectedLanguage: SupportedLanguage = /[А-ЯҚӨҮІҒҢҺа-яқөүіғңһ]/i.test(
     topic || recipient.name || recipient.occasion
@@ -229,7 +231,12 @@ export default function GuessByEmoji() {
   };
   const canPublish = Object.values(completeness).every(Boolean);
 
+  useEffect(() => () => {
+    if (!navigatingToPreview.current) localStorage.removeItem(DRAFT_KEY);
+  }, []);
+
   const handlePreview = (): void => {
+    navigatingToPreview.current = true;
     localStorage.setItem(DRAFT_KEY, JSON.stringify({
       recipient, personalMessage, topic, puzzles, showAnswers, gameTitle, draftGameId, visibility,
     }));
@@ -309,8 +316,9 @@ export default function GuessByEmoji() {
         if (coverFile && updateResult.coverUploadUrl) {
           await gamesService.uploadGameCover(updateResult.coverUploadUrl, coverFile);
         }
-        const published = await gamesService.publishGame(editGameId, buildPublishPayload(visibility));
-        navigate(`/games/${published.gameId}`);
+        const response = await gamesService.publishGame(editGameId, buildPublishPayload(visibility));
+        setWasPublished(true);
+        setEditGameId(response.gameId);
         return;
       }
 
@@ -345,11 +353,12 @@ export default function GuessByEmoji() {
         }
       }
 
-      const published = await gamesService.publishGame(
+      const response = await gamesService.publishGame(
         gameIdForPublish,
         buildPublishPayload(visibility)
       );
-      navigate(`/games/${published.gameId}`);
+      setWasPublished(true);
+      setEditGameId(response.gameId);
     } catch {
       // silent — user can retry
     } finally {
@@ -448,7 +457,6 @@ export default function GuessByEmoji() {
                 subtitle="Generates 5 puzzles based on your topic — replaces current puzzles"
                 onGenerate={handleAiGenerate}
                 isLoading={isAiLoading}
-                disabled={!recipient.name.trim() || !recipient.occasion.trim()}
                 error={aiError}
                 showCloseButton={false}
               />
@@ -566,11 +574,12 @@ export default function GuessByEmoji() {
                         type="file"
                         accept="image/jpeg,image/png,image/webp"
                         className="hidden"
-                        onChange={(e) => {
+                        onChange={async (e) => {
                           const file = e.target.files?.[0];
                           if (!file) return;
-                          setCoverFile(file);
-                          setCoverPreviewUrl(URL.createObjectURL(file));
+                          const compressed = await compressImage(file);
+                          setCoverFile(compressed);
+                          setCoverPreviewUrl(URL.createObjectURL(compressed));
                           e.target.value = "";
                         }}
                       />

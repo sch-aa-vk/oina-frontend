@@ -29,7 +29,9 @@ export function ForgotPasswordForm() {
       setSuccess(true);
     } catch (err) {
       if (isAxiosError(err)) {
-        setError(err.response?.data?.message ?? "Something went wrong.");
+        const errorMessage = err.response?.data?.message || "Something went wrong.";
+        const errorDetails = Object.values(err.response?.data?.details || {}).flat().join(" ");
+        setError(`${errorMessage} ${errorDetails}`.trim());
       } else {
         setError("Something went wrong.");
       }
@@ -78,9 +80,8 @@ export function ForgotPasswordForm() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
+              {error && <p className="text-sm text-destructive">{error}</p>}
             </Field>
-
-            {error && <p className="text-sm text-destructive">{error}</p>}
 
             <Field>
               <Button type="submit" disabled={isLoading}>
